@@ -33,10 +33,14 @@ def downloadArtifact(repo, file) {
  */
 def setProperty(artifactoryUrl, repo, name, version, properties, recursive = 0) {
     c = getCredentials('artifactory');
-    if (properties instanceof List) {
-        props = properties.join('|');
-    } else {
+    if (properties instanceof String) {
         props = properties
+    } else {
+        props = []
+        for (e in properties) {
+            props.push("${e.key}=${e.value}")
+        }
+        props = props.join('|')
     }
     sh "curl -s -f -u ${c.username}:${c.password} -X PUT '${artifactoryUrl}/api/storage/${repo}/${name}/${version}?properties=${props}&recursive=${recursive}'"
 }
@@ -60,6 +64,41 @@ def getCredentials(id) {
     }
 
     throw new Exception("Could not find credentials for ID ${id}")
+}
+
+/**
+ * Push docker image and set artifact properties
+ */
+def dockerPush(artifactoryUrl, artifactoryOutRepo, dockerUrl, img, imgName, properties, timestamp, latest = true) {
+    docker.withRegistry(dockerUrl, "artifactory") {
+        img.push()
+        // Also mark latest image
+        img.push("latest")
+    }
+
+    properties["build.number"] = currentBuild.build().environment.BUILD_NUMBER
+    properties["build.name"] = currentBuild.build().environment.JOB_NAME
+    properties["timestamp"] = timestamp
+
+    /* Set artifact properties */
+    setProperty(
+        artifactoryUrl,
+        artifactoryOutRepo,
+        imgName,
+        timestamp,
+        properties
+    )
+
+    // ..and the same for latest
+    if (latest == true) {
+        setProperty(
+            artifactoryUrl,
+            artifactoryOutRepo,
+            imgName,
+            "latest",
+            properties
+        )
+    }
 }
 
 return this;
