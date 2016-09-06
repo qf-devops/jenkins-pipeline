@@ -11,4 +11,11 @@ def getGitCommit() {
     return git_commit
 }
 
+def abortBuild() {
+    currentBuild.build().doStop()
+    sleep(180)
+    // just to be sure we will terminate
+    throw new InterruptedException()
+}
+
 return this;

@@ -23,6 +23,61 @@ def downloadArtifact(art, repo, file) {
 }
 
 /**
+ * Make GET request using Artifactory REST API and return parsed JSON
+ *
+ * @param art   Artifactory connection object
+ * @param uri   URI which will be appended to artifactory server base URL
+ */
+def restGet(art, uri) {
+    def connection = new URL("${art.url}/api${uri}").openConnection()
+
+    connection.setRequestProperty('User-Agent', 'groovy-2.4.4')
+    connection.setRequestProperty('Accept', 'application/json')
+    connection.setRequestProperty('Authorization', "Basic " +
+        "${art.creds.username}:${art.creds.password}".bytes.encodeBase64().toString())
+
+    if ( connection.responseCode == 200 ) {
+        return new groovy.json.JsonSlurperClassic().parseText(connection.inputStream.text)
+    } else {
+        throw new Exception(connection.responseCode + ": " + connection.inputStream.text)
+    }
+}
+
+/**
+ * Query artifacts by properties
+ *
+ * @param art   Artifactory connection object
+ * @param properties    String or list of properties in key=value format
+ * @param repo  Optional repository to search in
+ */
+def findArtifactByProperties(art, properties, repo) {
+    query = parseProperties(properties)
+    if (repo) {
+        query = query + "&repos=${repo}"
+    }
+    res = restGet(art, "/search/prop?${query}")
+    return res.results
+}
+
+/**
+ * Parse properties string or map and return URL-encoded string
+ *
+ * @param properties    string or key,value map
+ */
+def parseProperties(properties) {
+    if (properties instanceof String) {
+        return properties
+    } else {
+        props = []
+        for (e in properties) {
+            props.push("${e.key}=${e.value}")
+        }
+        props = props.join('|')
+        return props
+    }
+}
+
+/**
  * Set single property or list of properties to existing artifact
  *
  * @param art       Artifactory connection object
@@ -32,17 +87,8 @@ def downloadArtifact(art, repo, file) {
  * @param recursive Set properties recursively (default false)
  */
 def setProperty(art, name, version, properties, recursive = 0) {
-    c = getCredentials(art.credentialsId);
-    if (properties instanceof String) {
-        props = properties
-    } else {
-        props = []
-        for (e in properties) {
-            props.push("${e.key}=${e.value}")
-        }
-        props = props.join('|')
-    }
-    sh "curl -s -f -u ${c.username}:${c.password} -X PUT '${art.url}/api/storage/${art.outRepo}/${name}/${version}?properties=${props}&recursive=${recursive}'"
+    props = parseProperties(properties)
+    sh "curl -s -f -u ${art.creds.username}:${art.creds.password} -X PUT '${art.url}/api/storage/${art.outRepo}/${name}/${version}?properties=${props}&recursive=${recursive}'"
 }
 
 /**
@@ -80,13 +126,14 @@ def getCredentials(id) {
  *                            connection
  * @param credentialsID       ID of credentials store entry
  */
-def connection(url, serverId, dockerRegistryUrl, outRepo, credentialsID = "artifactory") {
+def connection(url, serverId, dockerRegistryUrl, outRepo, credentialsId = "artifactory") {
     params = [
         "url": url,
         "serverId": serverId,
-        "credentialsId": credentialsID,
+        "credentialsId": credentialsId,
         "dockerRegistryUrl": dockerRegistryUrl,
-        "outRepo": outRepo
+        "outRepo": outRepo,
+        "creds": getCredentials(credentialsId)
     ]
     return params
 }
