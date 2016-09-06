@@ -1,5 +1,5 @@
 def uploadArtifact(repo, file) {
-    def artifactory = Artifactory.server(System.getenv("ARTIFACTORY_SERVERID") ?: "default")
+    def artifactory = Artifactory.server(art.serverId ?: "default")
     def uploadSpec = """{
     "files": [{
         "pattern": "${file}",
@@ -10,8 +10,8 @@ def uploadArtifact(repo, file) {
     artifactory.upload(uploadSpec)
 }
 
-def downloadArtifact(repo, file) {
-    def artifactory = Artifactory.server(System.getenv("ARTIFACTORY_SERVERID") ?: "default")
+def downloadArtifact(art, repo, file) {
+    def artifactory = Artifactory.server(art.serverId ?: "default")
     def downloadSpec = """{
     "files": [{
         "pattern": "${file}",
@@ -25,14 +25,14 @@ def downloadArtifact(repo, file) {
 /**
  * Set single property or list of properties to existing artifact
  *
- * @param repo      Local repository name
+ * @param art       Artifactory connection object
  * @param name      Name of artifact
  * @param version   Artifact's version, eg. Docker image tag
  * @param properties    String or list of properties in key=value format
  * @param recursive Set properties recursively (default false)
  */
-def setProperty(artifactoryUrl, repo, name, version, properties, recursive = 0) {
-    c = getCredentials('artifactory');
+def setProperty(art, name, version, properties, recursive = 0) {
+    c = getCredentials(art.credentialsId);
     if (properties instanceof String) {
         props = properties
     } else {
@@ -42,7 +42,7 @@ def setProperty(artifactoryUrl, repo, name, version, properties, recursive = 0) 
         }
         props = props.join('|')
     }
-    sh "curl -s -f -u ${c.username}:${c.password} -X PUT '${artifactoryUrl}/api/storage/${repo}/${name}/${version}?properties=${props}&recursive=${recursive}'"
+    sh "curl -s -f -u ${c.username}:${c.password} -X PUT '${art.url}/api/storage/${art.outRepo}/${name}/${version}?properties=${props}&recursive=${recursive}'"
 }
 
 /**
@@ -67,10 +67,42 @@ def getCredentials(id) {
 }
 
 /**
- * Push docker image and set artifact properties
+ * Artifactory connection and context parameters
+ * Not all parameters are needed for all provided methods (some are using REST
+ * API and require url while some are using Artifactory plugin and require
+ * serverId)
+ *
+ * @param url       Artifactory server URL
+ * @param serverId  Server ID of artifactory plugin
+ * @param dockerRegistryUrl   URL to docker registry used in context of this
+ *                            connection
+ * @param outRepo             Output repository name used in context of this
+ *                            connection
+ * @param credentialsID       ID of credentials store entry
  */
-def dockerPush(artifactoryUrl, artifactoryOutRepo, dockerUrl, img, imgName, properties, timestamp, latest = true) {
-    docker.withRegistry(dockerUrl, "artifactory") {
+def connection(url, serverId, dockerRegistryUrl, outRepo, credentialsID = "artifactory") {
+    params = [
+        "url": url,
+        "serverId": serverId,
+        "credentialsId": credentialsID,
+        "dockerRegistryUrl": dockerRegistryUrl,
+        "outRepo": outRepo
+    ]
+    return params
+}
+
+/**
+ * Push docker image and set artifact properties
+ *
+ * @param art   Artifactory connection object
+ * @param img   Docker image object
+ * @param imgName       Name of docker image
+ * @param properties    Map of additional artifact properties
+ * @param timestamp     Build timestamp
+ * @param latest        Push latest tag if set to true (default true)
+ */
+def dockerPush(art, img, imgName, properties, timestamp, latest = true) {
+    docker.withRegistry(art.dockerRegistryUrl, art.credentialsId) {
         img.push()
         // Also mark latest image
         img.push("latest")
@@ -82,8 +114,7 @@ def dockerPush(artifactoryUrl, artifactoryOutRepo, dockerUrl, img, imgName, prop
 
     /* Set artifact properties */
     setProperty(
-        artifactoryUrl,
-        artifactoryOutRepo,
+        art,
         imgName,
         timestamp,
         properties
@@ -92,8 +123,7 @@ def dockerPush(artifactoryUrl, artifactoryOutRepo, dockerUrl, img, imgName, prop
     // ..and the same for latest
     if (latest == true) {
         setProperty(
-            artifactoryUrl,
-            artifactoryOutRepo,
+            art,
             imgName,
             "latest",
             properties
