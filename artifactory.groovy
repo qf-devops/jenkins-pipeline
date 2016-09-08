@@ -23,24 +23,84 @@ def downloadArtifact(art, repo, file) {
 }
 
 /**
+ * Make generic call using Artifactory REST API and return parsed JSON
+ *
+ * @param art   Artifactory connection object
+ * @param uri   URI which will be appended to artifactory server base URL
+ * @param method    HTTP method to use (default GET)
+ * @param data      JSON data to POST or PUT
+ * @param headers   Map of additional request headers
+ */
+def restCall(art, uri, method = 'GET', data = null, headers = []) {
+    def connection = new URL("${art.url}/api${uri}").openConnection()
+    if (method != 'GET') {
+        connection.setRequestMethod(method)
+    }
+
+    connection.setRequestProperty('User-Agent', 'jenkins-groovy')
+    connection.setRequestProperty('Accept', 'application/json')
+    connection.setRequestProperty('Authorization', "Basic " +
+        "${art.creds.username}:${art.creds.password}".bytes.encodeBase64().toString())
+
+    for (header in headers) {
+        connection.setRequestProperty(header.key, header.value)
+    }
+
+    if (data) {
+        connection.setRequestProperty('Content-Type', 'application/json')
+        connection.setDoOutput(true)
+        if (data instanceof String) {
+            dataStr = data
+        } else {
+            dataStr = new groovy.json.JsonBuilder(data).toString()
+        }
+        def out = new OutputStreamWriter(connection.outputStream)
+        out.write(dataStr)
+        out.close()
+    }
+
+    if ( connection.responseCode == 200 ) {
+        res = connection.inputStream.text
+        try {
+            return new groovy.json.JsonSlurperClassic().parseText(res)
+        } catch (groovy.json.JsonException e) {
+            return res
+        }
+    } else {
+        throw new Exception(connection.responseCode + ": " + connection.inputStream.text)
+    }
+}
+
+/**
  * Make GET request using Artifactory REST API and return parsed JSON
  *
  * @param art   Artifactory connection object
  * @param uri   URI which will be appended to artifactory server base URL
  */
 def restGet(art, uri) {
-    def connection = new URL("${art.url}/api${uri}").openConnection()
+    return restCall(art, uri)
+}
 
-    connection.setRequestProperty('User-Agent', 'groovy-2.4.4')
-    connection.setRequestProperty('Accept', 'application/json')
-    connection.setRequestProperty('Authorization', "Basic " +
-        "${art.creds.username}:${art.creds.password}".bytes.encodeBase64().toString())
+/**
+ * Make PUT request using Artifactory REST API and return parsed JSON
+ *
+ * @param art   Artifactory connection object
+ * @param uri   URI which will be appended to artifactory server base URL
+ * @param data  JSON Data to PUT
+ */
+def restPut(art, uri, data = null) {
+    return restCall(art, uri, 'PUT', data, ['Accept': '*/*'])
+}
 
-    if ( connection.responseCode == 200 ) {
-        return new groovy.json.JsonSlurperClassic().parseText(connection.inputStream.text)
-    } else {
-        throw new Exception(connection.responseCode + ": " + connection.inputStream.text)
-    }
+/**
+ * Make POST request using Artifactory REST API and return parsed JSON
+ *
+ * @param art   Artifactory connection object
+ * @param uri   URI which will be appended to artifactory server base URL
+ * @param data  JSON Data to PUT
+ */
+def restPost(art, uri, data = null) {
+    return restCall(art, uri, 'POST', data, ['Accept': '*/*'])
 }
 
 /**
@@ -176,6 +236,41 @@ def dockerPush(art, img, imgName, properties, timestamp, latest = true) {
             properties
         )
     }
+}
+
+/**
+ * Set offline parameter to repositories
+ *
+ * @param art       Artifactory connection object
+ * @param repos     List of base repositories
+ * @param suffix    Suffix to append to new repository names
+ */
+def setOffline(art, repos, suffix) {
+    for (repo in repos) {
+        repoName = "${repo}-${suffix}"
+        restPost(art, "/repositories/${repoName}", ['offline': true])
+    }
+    return
+}
+
+/**
+ * Create repositories based on timestamp or other suffix from already
+ * existing repository
+ *
+ * @param art       Artifactory connection object
+ * @param repos     List of base repositories
+ * @param suffix    Suffix to append to new repository names
+ */
+def createRepos(art, repos, suffix) {
+    def created = []
+    for (repo in repos) {
+        repoNewName = "${repo}-${suffix}"
+        repoOrig = restGet(art, "/repositories/${repo}")
+        repoOrig.key = repoNewName
+        repoNew  = restPut(art, "/repositories/${repoNewName}", repoOrig)
+        created.push(repoNewName)
+    }
+    return created
 }
 
 return this;
