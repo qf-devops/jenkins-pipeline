@@ -1,27 +1,3 @@
-def uploadArtifact(repo, file) {
-    def artifactory = Artifactory.server(art.serverId ?: "default")
-    def uploadSpec = """{
-    "files": [{
-        "pattern": "${file}",
-        "target": "${repo}/${file}"
-    }]
-    }"""
-
-    artifactory.upload(uploadSpec)
-}
-
-def downloadArtifact(art, repo, file) {
-    def artifactory = Artifactory.server(art.serverId ?: "default")
-    def downloadSpec = """{
-    "files": [{
-        "pattern": "${file}",
-        "target": "${repo}/${file}"
-    }]
-    }"""
-
-    artifactory.download(downloadSpec)
-}
-
 /**
  * Make generic call using Artifactory REST API and return parsed JSON
  *
@@ -174,27 +150,33 @@ def getCredentials(id) {
 
 /**
  * Artifactory connection and context parameters
- * Not all parameters are needed for all provided methods (some are using REST
- * API and require url while some are using Artifactory plugin and require
- * serverId)
  *
  * @param url       Artifactory server URL
- * @param serverId  Server ID of artifactory plugin
- * @param dockerRegistryUrl   URL to docker registry used in context of this
- *                            connection
+ * @param dockerRegistryBase  Base to docker registry
+ * @param dockerRegistrySSL   Use https to access docker registry
  * @param outRepo             Output repository name used in context of this
  *                            connection
  * @param credentialsID       ID of credentials store entry
  */
-def connection(url, serverId, dockerRegistryUrl, outRepo, credentialsId = "artifactory") {
+def connection(url, dockerRegistryBase, dockerRegistrySsl, outRepo, credentialsId = "artifactory") {
     params = [
         "url": url,
-        "serverId": serverId,
         "credentialsId": credentialsId,
-        "dockerRegistryUrl": dockerRegistryUrl,
+        "docker": [
+            "base": dockerRegistryBase,
+            "ssl": dockerRegistrySsl
+        ],
         "outRepo": outRepo,
         "creds": getCredentials(credentialsId)
     ]
+
+    if (dockerRegistrySsl ?: false) {
+        params["docker"]["proto"] = "https"
+    } else {
+        params["docker"]["proto"] = "http"
+    }
+    params["docker"]["url"] = "${params.docker.proto}://${params.outRepo}.${params.docker.base}"
+
     return params
 }
 
@@ -209,7 +191,7 @@ def connection(url, serverId, dockerRegistryUrl, outRepo, credentialsId = "artif
  * @param latest        Push latest tag if set to true (default true)
  */
 def dockerPush(art, img, imgName, properties, timestamp, latest = true) {
-    docker.withRegistry(art.dockerRegistryUrl, art.credentialsId) {
+    docker.withRegistry(art.docker.url, art.credentialsId) {
         img.push()
         // Also mark latest image
         img.push("latest")
