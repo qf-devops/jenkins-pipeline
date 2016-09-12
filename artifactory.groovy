@@ -220,6 +220,23 @@ def dockerPush(art, img, imgName, properties, timestamp, latest = true) {
     }
 }
 
+def dockerPromote(art, imgName, tag, env, keep = true, latest = true) {
+    /* XXX: promotion this way doesn't work
+    restPost(art, "/docker/${art.outRepo}/v2/promote", [
+        "targetRepo": "${art.outRepo}-${env}",
+        "dockerRepository": imgName,
+        "tag": tag,
+        "copy": keep ? true : false
+    ])
+    */
+
+    restPost(art, "/copy/${art.outRepo}/${imgName}/${tag}?to=${art.outRepo}-${env}/${imgName}/${tag}")
+
+    if (latest == true) {
+        restPost(art, "/copy/${art.outRepo}/${imgName}/${tag}?to=${art.outRepo}-${env}/${imgName}/latest")
+    }
+}
+
 /**
  * Set offline parameter to repositories
  *
