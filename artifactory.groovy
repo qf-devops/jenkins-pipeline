@@ -35,7 +35,7 @@ def restCall(art, uri, method = 'GET', data = null, headers = []) {
         out.close()
     }
 
-    if ( connection.responseCode == 200 ) {
+    if ( connection.responseCode >= 200 && connection.responseCode < 300 ) {
         res = connection.inputStream.text
         try {
             return new groovy.json.JsonSlurperClassic().parseText(res)
@@ -75,7 +75,7 @@ def restPut(art, uri, data = null) {
  * @param uri   URI which will be appended to artifactory server base URL
  */
 def restDelete(art, uri) {
-    return restCall(art, uri, 'DELETE', ['Accept': '*/*'])
+    return restCall(art, uri, 'DELETE', null, ['Accept': '*/*'])
 }
 
 /**
@@ -303,8 +303,8 @@ def deleteRepos(art, repos, suffix) {
     def deleted = []
     for (repo in repos) {
         repoName = "${repo}-${suffix}"
-        restDelete("/repositories/${repoName}")
-        created.push(repoName)
+        restDelete(art, "/repositories/${repoName}")
+        deleted.push(repoName)
     }
     return deleted
 }
