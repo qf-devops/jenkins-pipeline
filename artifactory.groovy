@@ -39,7 +39,7 @@ def restCall(art, uri, method = 'GET', data = null, headers = []) {
         res = connection.inputStream.text
         try {
             return new groovy.json.JsonSlurperClassic().parseText(res)
-        } catch (groovy.json.JsonException e) {
+        } catch (Exception e) {
             return res
         }
     } else {
