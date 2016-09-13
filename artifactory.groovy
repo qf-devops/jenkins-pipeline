@@ -250,11 +250,13 @@ def dockerPromote(art, imgName, tag, env, keep = true, latest = true) {
     ])
     */
 
-    restPost(art, "/copy/${art.outRepo}/${imgName}/${tag}?to=${art.outRepo}-${env}/${imgName}/${tag}")
+    action = keep ? "copy" : "move"
 
     if (latest == true) {
         restPost(art, "/copy/${art.outRepo}/${imgName}/${tag}?to=${art.outRepo}-${env}/${imgName}/latest")
     }
+
+    restPost(art, "/${action}/${art.outRepo}/${imgName}/${tag}?to=${art.outRepo}-${env}/${imgName}/${tag}")
 }
 
 /**
