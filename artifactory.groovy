@@ -69,6 +69,16 @@ def restPut(art, uri, data = null) {
 }
 
 /**
+ * Make DELETE request using Artifactory REST API
+ *
+ * @param art   Artifactory connection object
+ * @param uri   URI which will be appended to artifactory server base URL
+ */
+def restDelete(art, uri) {
+    return restCall(art, uri, 'DELETE', ['Accept': '*/*'])
+}
+
+/**
  * Make POST request using Artifactory REST API and return parsed JSON
  *
  * @param art   Artifactory connection object
@@ -220,6 +230,16 @@ def dockerPush(art, img, imgName, properties, timestamp, latest = true) {
     }
 }
 
+/**
+ * Promote docker image to another environment
+ *
+ * @param art   Artifactory connection object
+ * @param imgName       Name of docker image
+ * @param tag           Tag to promote
+ * @param env           Environment (repository suffix) to promote to
+ * @param keep          Keep artifact in source repository (copy, default true)
+ * @param latest        Push latest tag if set to true (default true)
+ */
 def dockerPromote(art, imgName, tag, env, keep = true, latest = true) {
     /* XXX: promotion this way doesn't work
     restPost(art, "/docker/${art.outRepo}/v2/promote", [
@@ -270,6 +290,23 @@ def createRepos(art, repos, suffix) {
         created.push(repoNewName)
     }
     return created
+}
+
+/**
+ * Delete repositories based on timestamp or other suffix
+ *
+ * @param art       Artifactory connection object
+ * @param repos     List of base repositories
+ * @param suffix    Suffix to append to new repository names
+ */
+def deleteRepos(art, repos, suffix) {
+    def deleted = []
+    for (repo in repos) {
+        repoName = "${repo}-${suffix}"
+        restDelete("/repositories/${repoName}")
+        created.push(repoName)
+    }
+    return deleted
 }
 
 return this;
