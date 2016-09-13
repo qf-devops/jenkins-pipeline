@@ -124,7 +124,7 @@ def parseProperties(properties) {
  */
 def setProperty(art, name, version, properties, recursive = 0) {
     props = parseProperties(properties)
-    sh "curl -s -f -u ${art.creds.username}:${art.creds.password} -X PUT '${art.url}/api/storage/${art.outRepo}/${name}/${version}?properties=${props}&recursive=${recursive}'"
+    restPut(art, "/storage/${art.outRepo}/${name}/${version}?properties=${props}&recursive=${recursive}")
 }
 
 /**
