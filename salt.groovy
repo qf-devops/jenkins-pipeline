@@ -154,7 +154,14 @@ def runCommand(master, client, target, function, args = null, kwargs = null) {
 }
 
 def enforceState(master, target, state, output = false) {
-    def out = runCommand(master, 'local', target, 'state.sls', [state])
+    def states
+    if (state instanceof String) {
+        states = [state]
+    } else {
+        states = state
+    }
+
+    def out = runCommand(master, 'local', target, 'state.sls', states)
     try {
         salt.checkResult(out)
     } finally {
@@ -223,7 +230,7 @@ def printResult(result, onlyChanges = true, raw = false) {
             for (node in entry) {
                 out[node.key] = [:]
                 for (resource in node.value) {
-                    if ((resource.value.result.toString().toBoolean() == false) || (resource.value.hasProperty("changes") && resource.value.changes) || onlyChanges == false) {
+                    if (resource.value.result.toString().toBoolean() == false || resource.value.changes || onlyChanges == false) {
                         out[node.key][resource.key] = resource.value
                     }
                 }
