@@ -165,6 +165,18 @@ def orchestrateSystem(master, target, orchestrate) {
     return runCommand(master, 'runner', target, 'state.orchestrate', [orchestrate])
 }
 
+def checkResult(result) {
+    for (entry in result['return']) {
+        for (node in entry) {
+            for (resource in node.value) {
+                if (resource.hasProperty("result") && resource["result"] == false) {
+                    throw new Exception("Salt state on node ${node.key} failed")
+                }
+            }
+        }
+    }
+}
+
 def printResult(result, onlyChanges = true) {
     def out = [:]
     for (entry in result['return']) {
