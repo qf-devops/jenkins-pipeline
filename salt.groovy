@@ -109,6 +109,11 @@ def connection(url, credentialsId = "salt") {
     return params
 }
 
+/**
+ * Login to Salt API, return auth token
+ *
+ * @param master   Salt connection object
+ */
 def saltLogin(master) {
     data = [
         'username': master.creds.username,
@@ -119,6 +124,17 @@ def saltLogin(master) {
     return authToken
 }
 
+/**
+ * Run action using Salt API
+ *
+ * @param master   Salt connection object
+ * @param client   Client type
+ * @param target   Target specification, eg. for compound matches by Pillar
+ *                 data: ['expression': 'I@openssh:server', 'type': 'compound'])
+ * @param function Function to execute (eg. "state.sls")
+ * @param args     Additional arguments to function
+ * @param kwargs     Additional key-value arguments to function
+ */
 def runCommand(master, client, target, function, args = null, kwargs = null) {
     data = [
         'tgt': target.expression,
@@ -165,6 +181,11 @@ def orchestrateSystem(master, target, orchestrate) {
     return runCommand(master, 'runner', target, 'state.orchestrate', [orchestrate])
 }
 
+/**
+ * Check result for errors and throw exception if any found
+ *
+ * @param result    Parsed response of Salt API
+ */
 def checkResult(result) {
     for (entry in result['return']) {
         for (node in entry) {
@@ -177,6 +198,12 @@ def checkResult(result) {
     }
 }
 
+/**
+ * Print possibly user-friendly result of Salt run
+ *
+ * @param result    Parsed response of Salt API
+ * @param onlyChanges   If true (default), print only changed resources
+ */
 def printResult(result, onlyChanges = true) {
     def out = [:]
     for (entry in result['return']) {
