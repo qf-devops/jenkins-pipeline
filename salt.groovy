@@ -153,8 +153,16 @@ def runCommand(master, client, target, function, args = null, kwargs = null) {
     return restPost(master, '/', [data])
 }
 
-def enforceState(master, target, state) {
-    return runCommand(master, 'local', target, 'state.sls', [state])
+def enforceState(master, target, state, output = false) {
+    def out = runCommand(master, 'local', target, 'state.sls', [state])
+    try {
+        salt.checkResult(out)
+    } finally {
+        if (output == true) {
+            salt.printResult(out)
+        }
+    }
+    return out
 }
 
 def syncAll(master, target) {
@@ -190,8 +198,8 @@ def checkResult(result) {
     for (entry in result['return']) {
         for (node in entry) {
             for (resource in node.value) {
-                if (resource.hasProperty("result") && resource["result"] == false) {
-                    throw new Exception("Salt state on node ${node.key} failed")
+                if (resource.value.result.toString().toBoolean() != true) {
+                    throw new Exception("Salt state on node ${node.key} failed: ${node.value}")
                 }
             }
         }
@@ -203,26 +211,32 @@ def checkResult(result) {
  *
  * @param result    Parsed response of Salt API
  * @param onlyChanges   If true (default), print only changed resources
+ * @param raw           Simply pretty print what we have, no additional
+ *                      parsing
  */
-def printResult(result, onlyChanges = true) {
-    def out = [:]
-    for (entry in result['return']) {
-        for (node in entry) {
-            out[node.key] = [:]
-            for (resource in node.value) {
-                if ((resource.hasProperty("changes") && resource["changes"]) || onlyChanges == false) {
-                    out[node.key][resource.key] = resource.value
+def printResult(result, onlyChanges = true, raw = false) {
+    if (raw == true) {
+        print new groovy.json.JsonBuilder(result).toPrettyString()
+    } else {
+        def out = [:]
+        for (entry in result['return']) {
+            for (node in entry) {
+                out[node.key] = [:]
+                for (resource in node.value) {
+                    if ((resource.value.result.toString().toBoolean() == false) || (resource.value.hasProperty("changes") && resource.value.changes) || onlyChanges == false) {
+                        out[node.key][resource.key] = resource.value
+                    }
                 }
             }
         }
-    }
 
-    for (node in out) {
-        if (node.value) {
-            println "Node ${node.key} changes:"
-            print new groovy.json.JsonBuilder(node.value).toPrettyString()
-        } else {
-            println "No changes for node ${node.key}"
+        for (node in out) {
+            if (node.value) {
+                println "Node ${node.key} changes:"
+                print new groovy.json.JsonBuilder(node.value).toPrettyString()
+            } else {
+                println "No changes for node ${node.key}"
+            }
         }
     }
 }
