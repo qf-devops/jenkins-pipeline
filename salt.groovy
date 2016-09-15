@@ -165,4 +165,20 @@ def orchestrateSystem(master, target, orchestrate) {
     return runCommand(master, 'runner', target, 'state.orchestrate', [orchestrate])
 }
 
+def printResult(result, onlyChanges = true) {
+    def out = [:]
+    for (entry in result['return']) {
+        for (node in entry) {
+            out[node.key] = [:]
+            for (resource in node.value) {
+                if ((resource.hasProperty("changes") && resource["changes"]) || onlyChanges == false) {
+                    out[node.key][resource.key] = resource.value
+                }
+            }
+        }
+    }
+    print out
+    print new groovy.json.JsonBuilder(out).toPrettyString()
+}
+
 return this;
