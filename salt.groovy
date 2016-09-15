@@ -177,8 +177,15 @@ def printResult(result, onlyChanges = true) {
             }
         }
     }
-    print out
-    print new groovy.json.JsonBuilder(out).toPrettyString()
+
+    for (node in out) {
+        if (node.value) {
+            println "Node ${node.key} changes:"
+            print new groovy.json.JsonBuilder(node.value).toPrettyString()
+        } else {
+            println "No changes for node ${node.key}"
+        }
+    }
 }
 
 return this;
