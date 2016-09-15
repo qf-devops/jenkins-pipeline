@@ -53,7 +53,6 @@ def restCall(master, uri, method = 'GET', data = null, headers = [:]) {
             connection.setRequestProperty('Content-Type', 'application/json')
             dataStr = new groovy.json.JsonBuilder(data).toString()
         }
-        println(dataStr)
         def out = new OutputStreamWriter(connection.outputStream)
         out.write(dataStr)
         out.close()
@@ -135,35 +134,35 @@ def runCommand(master, client, target, function, args = null, kwargs = null) {
         data['kwarg'] = kwargs
     }
 
-    output = restPost(master, '/', [data])
+    return restPost(master, '/', [data])
 }
 
 def enforceState(master, target, state) {
-    runCommand(master, 'local', target, 'state.sls', [state])
+    return runCommand(master, 'local', target, 'state.sls', [state])
 }
 
 def syncAll(master, target) {
-    runCommand(master, 'local', target, 'saltutil.sync_all')
+    return runCommand(master, 'local', target, 'saltutil.sync_all')
 }
 
 def enforceHighstate(master, target) {
-    runCommand(master, 'local', target, 'state.highstate')
+    return runCommand(master, 'local', target, 'state.highstate')
 }
 
 def generateNodeKey(master, target, host, keysize = 4096) {
     args = [host]
     kwargs = ['keysize': keysize]
-    runCommand(master, 'wheel', target, 'key.gen_accept', args, kwargs)
+    return runCommand(master, 'wheel', target, 'key.gen_accept', args, kwargs)
 }
 
 def generateNodeMetadata(master, target, host, classes, parameters) {
     args = [host, '_generated']
     kwargs = ['classes': classes, 'parameters': parameters]
-    runCommand(master, 'local', target, 'reclass.node_create', args, kwargs)
+    return runCommand(master, 'local', target, 'reclass.node_create', args, kwargs)
 }
 
 def orchestrateSystem(master, target, orchestrate) {
-    runCommand(master, 'runner', target, 'state.orchestrate', [orchestrate])
+    return runCommand(master, 'runner', target, 'state.orchestrate', [orchestrate])
 }
 
 return this;
