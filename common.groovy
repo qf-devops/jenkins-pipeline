@@ -85,7 +85,7 @@ def mirrorGit(sourceUrl, targetUrl, credentialsId, branches, gitEmail = 'jenkins
 
     sh "git config --global user.email '${gitEmail}'"
     sh "git config --global user.name '${gitUsername}'"
-    sh "git merge --no-edit --ff target/${branch}"
+    sh "git ls-tree target/${branch} && git merge --no-edit --ff target/${branch} || echo 'Target repository is empty, skipping merge'"
     agentSh "git push --follow-tags target HEAD:${branch}"
     //}
 }
