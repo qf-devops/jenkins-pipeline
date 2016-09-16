@@ -111,16 +111,15 @@ def findArtifactByProperties(art, properties, repo) {
  * @param properties    string or key,value map
  */
 def parseProperties(properties) {
-    if (properties instanceof Map) {
+    if (properties instanceof String) {
+        return properties
+    } else {
         props = []
         for (e in properties) {
-            print e
-            props[e.key] = e.value
+            props.push("${e.key}=${e.value}")
         }
         props = props.join('|')
         return props
-    } else {
-        return properties
     }
 }
 
