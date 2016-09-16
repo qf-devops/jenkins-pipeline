@@ -154,19 +154,19 @@ def runCommand(master, client, target, function, args = null, kwargs = null) {
 }
 
 def enforceState(master, target, state, output = false) {
-    def states
+    def run_states
     if (state instanceof String) {
-        states = [state]
+        run_states = state
     } else {
-        states = state
+        run_states = state.join(',')
     }
 
-    def out = runCommand(master, 'local', target, 'state.sls', states)
+    def out = runCommand(master, 'local', target, 'state.sls', [run_states])
     try {
-        salt.checkResult(out)
+        checkResult(out)
     } finally {
         if (output == true) {
-            salt.printResult(out)
+            printResult(out)
         }
     }
     return out
@@ -176,8 +176,16 @@ def syncAll(master, target) {
     return runCommand(master, 'local', target, 'saltutil.sync_all')
 }
 
-def enforceHighstate(master, target) {
-    return runCommand(master, 'local', target, 'state.highstate')
+def enforceHighstate(master, target, output = false) {
+    def out = runCommand(master, 'local', target, 'state.highstate')
+    try {
+        checkResult(out)
+    } finally {
+        if (output == true) {
+            printResult(out)
+        }
+    }
+    return out
 }
 
 def generateNodeKey(master, target, host, keysize = 4096) {
@@ -203,9 +211,12 @@ def orchestrateSystem(master, target, orchestrate) {
  */
 def checkResult(result) {
     for (entry in result['return']) {
+        if (!entry) {
+            throw new Exception("Salt API returned empty response: ${result}")
+        }
         for (node in entry) {
             for (resource in node.value) {
-                if (resource.value.result.toString().toBoolean() != true) {
+                if (resource instanceof String || resource.value.result.toString().toBoolean() != true) {
                     throw new Exception("Salt state on node ${node.key} failed: ${node.value}")
                 }
             }
@@ -230,7 +241,9 @@ def printResult(result, onlyChanges = true, raw = false) {
             for (node in entry) {
                 out[node.key] = [:]
                 for (resource in node.value) {
-                    if (resource.value.result.toString().toBoolean() == false || resource.value.changes || onlyChanges == false) {
+                    if (resource instanceof String) {
+                        out[node.key] = node.value
+                    } else if (resource.value.result.toString().toBoolean() == false || resource.value.changes || onlyChanges == false) {
                         out[node.key][resource.key] = resource.value
                     }
                 }
