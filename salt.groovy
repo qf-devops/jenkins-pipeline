@@ -172,6 +172,11 @@ def enforceState(master, target, state, output = false) {
     return out
 }
 
+def cmdRun(master, target, cmd) {
+    def out = runCommand(master, 'local', target, 'cmd.run', [cmd])
+    return out
+}
+
 def syncAll(master, target) {
     return runCommand(master, 'local', target, 'saltutil.sync_all')
 }
