@@ -253,9 +253,12 @@ def dockerPromote(art, imgName, tag, env, keep = true, latest = true) {
     action = keep ? "copy" : "move"
     restPost(art, "/${action}/${art.outRepo}/${imgName}/${tag}?to=${art.outRepo}-${env}/${imgName}/${tag}")
     if (latest == true) {
+        docker.withRegistry("${art.docker.url}", art.credentialsId) {
+            img = docker.image("${imgName}:$tag")
+        }
+
         dockerUrl = "${art.docker.proto}://${art.outRepo}-${env}.${art.docker.base}"
         docker.withRegistry(dockerUrl, art.credentialsId) {
-            img = docker.image("${imgName}:$tag")
             img.push("latest")
         }
     }
