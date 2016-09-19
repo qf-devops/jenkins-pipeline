@@ -251,14 +251,14 @@ def dockerPromote(art, imgName, tag, env, keep = true, latest = true) {
     */
 
     action = keep ? "copy" : "move"
-    restPost(art, "/${action}/${art.outRepo}/${imgName}/${tag}?to=${art.outRepo}-${env}/${imgName}/${tag}")
+
     if (latest == true) {
-        dockerUrl = "${art.docker.proto}://${art.outRepo}-${env}.${art.docker.base}"
-        docker.withRegistry(dockerUrl, art.credentialsId) {
-            img = docker.image("${imgName}:$tag")
-            img.push("latest")
-        }
+        // XXX: can't tag latest image when using copy so just promote already
+        // existing latest tag and suppose it's the same image
+        restPost(art, "/copy/${art.outRepo}/${imgName}/latest?to=${art.outRepo}-${env}/${imgName}/latest")
     }
+
+    restPost(art, "/${action}/${art.outRepo}/${imgName}/${tag}?to=${art.outRepo}-${env}/${imgName}/${tag}")
 }
 
 /**
