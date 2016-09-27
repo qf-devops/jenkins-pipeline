@@ -70,7 +70,7 @@ def ensureKnownHosts(url) {
 /**
  * Mirror git repository
  */
-def mirrorGit(sourceUrl, targetUrl, credentialsId, branches, gitEmail = 'jenkins@localhost', gitUsername = 'Jenkins') {
+def mirrorGit(sourceUrl, targetUrl, credentialsId, branches, followTags = false, gitEmail = 'jenkins@localhost', gitUsername = 'Jenkins') {
     prepareSshAgentKey(credentialsId)
     ensureKnownHosts(targetUrl)
 
@@ -86,7 +86,8 @@ def mirrorGit(sourceUrl, targetUrl, credentialsId, branches, gitEmail = 'jenkins
     sh "git config --global user.email '${gitEmail}'"
     sh "git config --global user.name '${gitUsername}'"
     sh "git ls-tree target/${branch} && git merge --no-edit --ff target/${branch} || echo 'Target repository is empty, skipping merge'"
-    agentSh "git push --follow-tags target HEAD:${branch}"
+    followTagsArg = followTags : "--follow-tags" ? ""
+    agentSh "git push ${followTagsArg} target HEAD:${branch}"
     //}
 }
 
