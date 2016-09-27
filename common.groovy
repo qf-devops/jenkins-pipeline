@@ -86,7 +86,7 @@ def mirrorGit(sourceUrl, targetUrl, credentialsId, branches, followTags = false,
     sh "git config --global user.email '${gitEmail}'"
     sh "git config --global user.name '${gitUsername}'"
     sh "git ls-tree target/${branch} && git merge --no-edit --ff target/${branch} || echo 'Target repository is empty, skipping merge'"
-    followTagsArg = followTags : "--follow-tags" ? ""
+    followTagsArg = followTags ? "--follow-tags" : ""
     agentSh "git push ${followTagsArg} target HEAD:${branch}"
     //}
 }
