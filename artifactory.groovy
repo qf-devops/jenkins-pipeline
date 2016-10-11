@@ -314,4 +314,25 @@ def deleteRepos(art, repos, suffix) {
     return deleted
 }
 
+/**
+ * Build step to upload docker image. For use with eg. parallel
+ *
+ * @param art           Artifactory connection object
+ * @param img           Image name to push
+ * @param properties    Map with additional artifact properties
+ * @param timestamp     Image tag
+ */
+def uploadDockerImageStep(art, img, properties, timestamp) {
+    return {
+        println "Uploading artifact ${img} into ${art.outRepo}"
+        dockerPush(
+            art,
+            docker.image("${img}:${timestamp}"),
+            img,
+            properties,
+            timestamp
+        )
+    }
+}
+
 return this;
