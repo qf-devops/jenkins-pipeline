@@ -7,7 +7,7 @@
  * @param data      JSON data to POST or PUT
  * @param headers   Map of additional request headers
  */
-def restCall(art, uri, method = 'GET', data = null, headers = []) {
+def restCall(art, uri, method = 'GET', data = null, headers = [:]) {
     def connection = new URL("${art.url}/api${uri}").openConnection()
     if (method != 'GET') {
         connection.setRequestMethod(method)

@@ -15,7 +15,7 @@ def buildDockerImageStep(img, baseImg, dockerfile, timestamp) {
         docker.build(
             "${img}:${timestamp}",
             [
-                "${dockerfile}",
+                "-f ${dockerfile}",
                 df.getParent()
             ].join(' ')
         )
