@@ -19,6 +19,25 @@ def abortBuild() {
 }
 
 /**
+ * Checkout git repositories in parallel
+ *
+ * @param dir   Directory to checkout to
+ * @param url   Git repository url
+ * @param branch        Git repository branch
+ * @param credentialsId Credentials id to use
+ * @param poll          Poll automatically
+ * @param clean         Clean status
+ */
+def gitCheckoutStep(dir, url, branch, credentialsId  = null, poll = true, clean = true) {
+    return {
+        print "Checking out ${url}, branch ${branch} into ${dir}"
+        dir(dir) {
+            git url: url, branch: branch, credentialsId: credentialsId, poll: poll, clean: clean
+        }
+    }
+}
+
+/**
  * Get SSH credentials from store
  *
  * @param id    Credentials name
