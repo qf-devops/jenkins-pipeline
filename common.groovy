@@ -28,10 +28,10 @@ def abortBuild() {
  * @param poll          Poll automatically
  * @param clean         Clean status
  */
-def gitCheckoutStep(dir, url, branch, credentialsId  = null, poll = true, clean = true) {
+def gitCheckoutStep(directory, url, branch, credentialsId  = null, poll = true, clean = true) {
     return {
-        print "Checking out ${url}, branch ${branch} into ${dir}"
-        dir(dir) {
+        print "Checking out ${url}, branch ${branch} into ${directory}"
+        dir(directory) {
             git url: url, branch: branch, credentialsId: credentialsId, poll: poll, clean: clean
         }
     }
