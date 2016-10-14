@@ -19,6 +19,18 @@ def abortBuild() {
 }
 
 /**
+ * Opposite of build-in parallel, run map of steps in serial
+ *
+ * @param steps Map of String<name>: CPSClosure2<step>
+ */
+def serial(steps) {
+    for (singlestep in steps) {
+        dummySteps = ["${singlestep.key}": singlestep.value]
+        parallel dummySteps
+    }
+}
+
+/**
  * Checkout git repositories in parallel
  *
  * @param dir   Directory to checkout to
