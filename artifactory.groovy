@@ -315,6 +315,31 @@ def deleteRepos(art, repos, suffix) {
 }
 
 /**
+ * Upload debian package
+ *
+ * @param art           Artifactory connection object
+ * @param file          File path
+ * @param properties    Map with additional artifact properties
+ * @param timestamp     Image tag
+ */
+def uploadDebian(art, file, properties, distribution, component, timestamp) {
+    fh = new File(file)
+    def arch = fh.name.split('\\.')[0].split('_')[-1];
+    restPut(art, "${art.outRepo}/pool/${fh.name};deb.distribution=${distribution};deb.component=${component};deb.architecture=${arch}")
+
+    /* Set artifact properties */
+    properties["build.number"] = currentBuild.build().environment.BUILD_NUMBER
+    properties["build.name"] = currentBuild.build().environment.JOB_NAME
+    properties["timestamp"] = timestamp
+    setProperty(
+        art,
+        "pool/${fh.name}",
+        timestamp,
+        properties
+    )
+}
+
+/**
  * Build step to upload docker image. For use with eg. parallel
  *
  * @param art           Artifactory connection object
@@ -330,6 +355,27 @@ def uploadDockerImageStep(art, img, properties, timestamp) {
             docker.image("${img}:${timestamp}"),
             img,
             properties,
+            timestamp
+        )
+    }
+}
+
+/**
+ * Build step to upload package. For use with eg. parallel
+ *
+ * @param art           Artifactory connection object
+ * @param file          File path
+ * @param properties    Map with additional artifact properties
+ * @param timestamp     Image tag
+ */
+def uploadPackageStep(art, file, properties, distribution, component, timestamp) {
+    return {
+        uploadDebian(
+            art,
+            file,
+            properties,
+            distribution,
+            component,
             timestamp
         )
     }
