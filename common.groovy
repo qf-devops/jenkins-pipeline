@@ -23,6 +23,7 @@ def abortBuild() {
  *
  * @param steps Map of String<name>: CPSClosure2<step>
  */
+@NonCPS
 def serial(steps) {
     for (singlestep in steps) {
         dummySteps = ["${singlestep.key}": singlestep.value]
