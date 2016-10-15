@@ -1,8 +1,16 @@
+/**
+ * Generate current timestamp
+ *
+ * @param format    Defaults to yyyyMMddHHmmss
+ */
 def getDatetime(format="yyyyMMddHHmmss") {
     def now = new Date();
     return now.format(format, TimeZone.getTimeZone('UTC'));
 }
 
+/**
+ * Parse HEAD of current directory and return commit hash
+ */
 def getGitCommit() {
     git_commit = sh (
         script: 'git rev-parse HEAD',
@@ -11,6 +19,9 @@ def getGitCommit() {
     return git_commit
 }
 
+/**
+ * Abort build, wait for some time and ensure we will terminate
+ */
 def abortBuild() {
     currentBuild.build().doStop()
     sleep(180)
@@ -19,14 +30,26 @@ def abortBuild() {
 }
 
 /**
+ * Helper method to convert map into form of list of [key,value] to avoid
+ * unserializable exceptions
+ *
+ * @param m Map
+ */
+@NonCPS
+def entries(m) {
+    m.collect {k, v -> [k, v]}
+}
+
+/**
  * Opposite of build-in parallel, run map of steps in serial
  *
  * @param steps Map of String<name>: CPSClosure2<step>
  */
-@NonCPS
 def serial(steps) {
-    for (singlestep in steps) {
-        dummySteps = ["${singlestep.key}": singlestep.value]
+    stepsArray = entries(steps)
+    for (i=0; i < stepsArray.size; i++) {
+        s = stepsArray[i]
+        dummySteps = ["${s[0]}": s[1]]
         parallel dummySteps
     }
 }
@@ -73,6 +96,8 @@ def getSshCredentials(id) {
 
 /**
  * Setup ssh agent and add private key
+ *
+ * @param credentialsId Jenkins credentials name to lookup private key
  */
 def prepareSshAgentKey(credentialsId) {
     c = getSshCredentials(credentialsId)
@@ -84,6 +109,8 @@ def prepareSshAgentKey(credentialsId) {
 
 /**
  * Execute command with ssh-agent
+ *
+ * @param cmd   Command to execute
  */
 def agentSh(cmd) {
     sh(". ~/.ssh/ssh-agent.sh && ${cmd}")
@@ -91,6 +118,8 @@ def agentSh(cmd) {
 
 /**
  * Ensure entry in SSH known hosts
+ *
+ * @param url   url of remote host
  */
 def ensureKnownHosts(url) {
     uri = new URI(url)
