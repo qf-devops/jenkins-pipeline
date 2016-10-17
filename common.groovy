@@ -30,6 +30,21 @@ def abortBuild() {
 }
 
 /**
+ * Traverse directory structure and return list of files
+ *
+ * @param path Path to search
+ * @param type Type of files to search (groovy.io.FileType.FILES)
+ */
+@NonCPS
+def getFiles(path, type=groovy.io.FileType.FILES) {
+    files = []
+    new File(path).eachFile(type) {
+        files[] = it
+    }
+    return files
+}
+
+/**
  * Helper method to convert map into form of list of [key,value] to avoid
  * unserializable exceptions
  *
