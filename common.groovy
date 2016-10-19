@@ -147,24 +147,25 @@ def ensureKnownHosts(url) {
  * Mirror git repository
  */
 def mirrorGit(sourceUrl, targetUrl, credentialsId, branches, followTags = false, gitEmail = 'jenkins@localhost', gitUsername = 'Jenkins') {
+    if (branches instanceof String) {
+        branches = branches.split(',')
+    }
+
     prepareSshAgentKey(credentialsId)
     ensureKnownHosts(targetUrl)
 
     sh "git remote | grep target || git remote add target ${TARGET_URL}"
     agentSh "git remote update --prune"
-    // TODO: doesn't work because of java.io.NotSerializableException: java.util.AbstractList$Itr
-    //for (Iterator<String> branchIter = branches.iterator(); branchIter.hasNext();) {
-    //branch = branchIter.next()
-    branch = branches
-    sh "git branch | grep ${branch} || git checkout -b ${branch} origin/${branch}"
-    sh "git branch | grep ${branch} && git checkout ${branch} && git reset --hard origin/${branch}"
+    for (branch in branches) {
+        sh "git branch | grep ${branch} || git checkout -b ${branch} origin/${branch}"
+        sh "git branch | grep ${branch} && git checkout ${branch} && git reset --hard origin/${branch}"
 
-    sh "git config --global user.email '${gitEmail}'"
-    sh "git config --global user.name '${gitUsername}'"
-    sh "git ls-tree target/${branch} && git merge --no-edit --ff target/${branch} || echo 'Target repository is empty, skipping merge'"
-    followTagsArg = followTags ? "--follow-tags" : ""
-    agentSh "git push ${followTagsArg} target HEAD:${branch}"
-    //}
+        sh "git config --global user.email '${gitEmail}'"
+        sh "git config --global user.name '${gitUsername}'"
+        sh "git ls-tree target/${branch} && git merge --no-edit --ff target/${branch} || echo 'Target repository is empty, skipping merge'"
+        followTagsArg = followTags ? "--follow-tags" : ""
+        agentSh "git push ${followTagsArg} target HEAD:${branch}"
+    }
 }
 
 return this;
