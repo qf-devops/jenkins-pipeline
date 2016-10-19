@@ -153,6 +153,11 @@ def runCommand(master, client, target, function, args = null, kwargs = null) {
     return restPost(master, '/', [data])
 }
 
+def pillarGet(master, target, pillar) {
+    def out = runCommand(master, 'local', target, 'pillar.get', [pillar.replace('.', ':')])
+    return out
+}
+
 def enforceState(master, target, state, output = false) {
     def run_states
     if (state instanceof String) {
