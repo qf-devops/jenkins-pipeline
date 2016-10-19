@@ -156,7 +156,8 @@ def mirrorGit(sourceUrl, targetUrl, credentialsId, branches, followTags = false,
 
     sh "git remote | grep target || git remote add target ${TARGET_URL}"
     agentSh "git remote update --prune"
-    for (branch in branches) {
+    for (i=0; i < branches.size; i++) {
+        branch = branches[i]
         sh "git branch | grep ${branch} || git checkout -b ${branch} origin/${branch}"
         sh "git branch | grep ${branch} && git checkout ${branch} && git reset --hard origin/${branch}"
 
