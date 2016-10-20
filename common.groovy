@@ -148,7 +148,7 @@ def ensureKnownHosts(url) {
  */
 def mirrorGit(sourceUrl, targetUrl, credentialsId, branches, followTags = false, gitEmail = 'jenkins@localhost', gitUsername = 'Jenkins') {
     if (branches instanceof String) {
-        branches = branches.split(',')
+        branches = branches.tokenize(',')
     }
 
     prepareSshAgentKey(credentialsId)
