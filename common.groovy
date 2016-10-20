@@ -20,6 +20,17 @@ def getGitCommit() {
 }
 
 /**
+ * Return workspace.
+ * Currently implemented by calling pwd so it won't return relevant result in
+ * dir context
+ */
+def getWorkspace() {
+    def workspace = sh script: 'pwd', returnStdout: true
+    workspace = workspace.trim()
+    return workspace
+}
+
+/**
  * Abort build, wait for some time and ensure we will terminate
  */
 def abortBuild() {
