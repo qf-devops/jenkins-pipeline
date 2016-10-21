@@ -41,6 +41,22 @@ def abortBuild() {
 }
 
 /**
+ * Print informational message
+ *
+ * @param msg
+ * @param color Colorful output or not
+ */
+def info(msg, color = true) {
+    if (color == true) {
+        wrap([$class: 'AnsiColorBuildWrapper']) {
+            print "\u001B[34m[INFO]\u001B[0m $msg"
+        }
+    } else {
+        print "[INFO] ${msg}"
+    }
+}
+
+/**
  * Traverse directory structure and return list of files
  *
  * @param path Path to search
