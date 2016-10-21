@@ -325,7 +325,7 @@ def deleteRepos(art, repos, suffix) {
 def uploadDebian(art, file, properties, distribution, component, timestamp) {
     fh = new File(file)
     def arch = fh.name.split('\\.')[0].split('_')[-1];
-    restPut(art, "${art.outRepo}/pool/${fh.name};deb.distribution=${distribution};deb.component=${component};deb.architecture=${arch}")
+    restPut(art, "/${art.outRepo}/pool/${fh.name};deb.distribution=${distribution};deb.component=${component};deb.architecture=${arch}")
 
     /* Set artifact properties */
     properties["build.number"] = currentBuild.build().environment.BUILD_NUMBER
