@@ -47,12 +47,34 @@ def abortBuild() {
  * @param color Colorful output or not
  */
 def info(msg, color = true) {
-    if (color == true) {
+    printMsg(msg, "INFO", "cyan")
+}
+
+/**
+ * Print message
+ *
+ * @param msg
+ * @param level Level of message (default INFO)
+ * @param color Color to use for output or false (default)
+ */
+def printMsg(msg, level = "INFO", color = false) {
+    colors = [
+        'red'   : '\u001B[31m',
+        'black' : '\u001B[30m',
+        'green' : '\u001B[32m',
+        'yellow': '\u001B[33m',
+        'blue'  : '\u001B[34m',
+        'purple': '\u001B[35m',
+        'cyan'  : '\u001B[36m',
+        'white' : '\u001B[37m',
+        'reset' : '\u001B[0m'
+    ]
+    if (color != false) {
         wrap([$class: 'AnsiColorBuildWrapper']) {
-            print "\u001B[34m[INFO]\u001B[0m $msg"
+            print "${colors[color]}[${level}] ${msg}${colors.reset}"
         }
     } else {
-        print "[INFO] ${msg}"
+        print "[${level}] ${msg}"
     }
 }
 
