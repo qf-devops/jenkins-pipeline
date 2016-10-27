@@ -23,11 +23,15 @@ def restCall(art, uri, method = 'GET', data = null, headers = [:]) {
     }
 
     if (data) {
-        connection.setRequestProperty('Content-Type', 'application/json')
         connection.setDoOutput(true)
         if (data instanceof String) {
+            connection.setRequestProperty('Content-Type', 'application/json')
             dataStr = data
+        } else if (data instanceof java.io.File) {
+            connection.setRequestProperty('Content-Type', 'application/octet-stream')
+            dataStr = fh.bytes
         } else {
+            connection.setRequestProperty('Content-Type', 'application/json')
             dataStr = new groovy.json.JsonBuilder(data).toString()
         }
         def out = new OutputStreamWriter(connection.outputStream)
@@ -325,7 +329,7 @@ def deleteRepos(art, repos, suffix) {
 def uploadDebian(art, file, properties, distribution, component, timestamp) {
     fh = new File(file)
     def arch = fh.name.split('_')[-1].split('\\.')[0]
-    restPut(art, "/${art.outRepo}/pool/${fh.name};deb.distribution=${distribution};deb.component=${component};deb.architecture=${arch}")
+    restPut(art, "/${art.outRepo}/pool/${fh.name};deb.distribution=${distribution};deb.component=${component};deb.architecture=${arch}", fh)
 
     /* Set artifact properties */
     properties["build.number"] = currentBuild.build().environment.BUILD_NUMBER
