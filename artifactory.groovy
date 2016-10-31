@@ -327,7 +327,12 @@ def deleteRepos(art, repos, suffix) {
  * @param timestamp     Image tag
  */
 def uploadDebian(art, file, properties, distribution, component, timestamp) {
-    fh = new File(file)
+    def fh
+    if (file instanceof java.io.File) {
+        fh = file
+    } else {
+        fh = new File(file)
+    }
     def arch = fh.name.split('_')[-1].split('\\.')[0]
     restPut(art, "/${art.outRepo}/pool/${fh.name};deb.distribution=${distribution};deb.component=${component};deb.architecture=${arch}", fh)
 
