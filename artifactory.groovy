@@ -29,7 +29,7 @@ def restCall(art, uri, method = 'GET', data = null, headers = [:]) {
             dataStr = data
         } else if (data instanceof java.io.File) {
             connection.setRequestProperty('Content-Type', 'application/octet-stream')
-            dataStr = fh.bytes
+            dataStr = data.bytes
         } else {
             connection.setRequestProperty('Content-Type', 'application/json')
             dataStr = new groovy.json.JsonBuilder(data).toString()
