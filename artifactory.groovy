@@ -30,6 +30,9 @@ def restCall(art, uri, method = 'GET', data = null, headers = [:]) {
         } else if (data instanceof java.io.File) {
             connection.setRequestProperty('Content-Type', 'application/octet-stream')
             dataStr = data.bytes
+        } else if (data instanceof byte[]) {
+            connection.setRequestProperty('Content-Type', 'application/octet-stream')
+            dataStr = data
         } else {
             connection.setRequestProperty('Content-Type', 'application/json')
             dataStr = new groovy.json.JsonBuilder(data).toString()
@@ -326,15 +329,20 @@ def deleteRepos(art, repos, suffix) {
  * @param properties    Map with additional artifact properties
  * @param timestamp     Image tag
  */
-def uploadDebian(art, file, properties, distribution, component, timestamp) {
+def uploadDebian(art, file, properties, distribution, component, timestamp, data = null) {
     def fh
     if (file instanceof java.io.File) {
         fh = file
     } else {
         fh = new File(file)
     }
+
     def arch = fh.name.split('_')[-1].split('\\.')[0]
-    restPut(art, "/${art.outRepo}/pool/${fh.name};deb.distribution=${distribution};deb.component=${component};deb.architecture=${arch}", fh)
+    if (data) {
+        restPut(art, "/${art.outRepo}/pool/${fh.name};deb.distribution=${distribution};deb.component=${component};deb.architecture=${arch}", data)
+    } else {
+        restPut(art, "/${art.outRepo}/pool/${fh.name};deb.distribution=${distribution};deb.component=${component};deb.architecture=${arch}", fh)
+    }
 
     /* Set artifact properties */
     properties["build.number"] = currentBuild.build().environment.BUILD_NUMBER
