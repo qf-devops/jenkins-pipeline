@@ -51,6 +51,36 @@ def info(msg, color = true) {
 }
 
 /**
+ * Print error message
+ *
+ * @param msg
+ * @param color Colorful output or not
+ */
+def error(msg, color = true) {
+    printMsg(msg, "INFO", "red")
+}
+
+/**
+ * Print success message
+ *
+ * @param msg
+ * @param color Colorful output or not
+ */
+def success(msg, color = true) {
+    printMsg(msg, "INFO", "green")
+}
+
+/**
+ * Print warning message
+ *
+ * @param msg
+ * @param color Colorful output or not
+ */
+def warning(msg, color = true) {
+    printMsg(msg, "INFO", "yellow")
+}
+
+/**
  * Print message
  *
  * @param msg
