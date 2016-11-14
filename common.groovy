@@ -89,25 +89,19 @@ def warning(msg, color = true) {
  */
 def printMsg(msg, level = "INFO", color = false) {
     colors = [
-        'red=\u001B[31m',
-        'black=\u001B[30m',
-        'green=\u001B[32m',
-        'yellow=\u001B[33m',
-        'blue=\u001B[34m',
-        'purple=\u001B[35m',
-        'cyan=\u001B[36m',
-        'white=\u001B[37m',
-        'reset=\u001B[0m'
+        'red'   : '\u001B[31m',
+        'black' : '\u001B[30m',
+        'green' : '\u001B[32m',
+        'yellow': '\u001B[33m',
+        'blue'  : '\u001B[34m',
+        'purple': '\u001B[35m',
+        'cyan'  : '\u001B[36m',
+        'white' : '\u001B[37m',
+        'reset' : '\u001B[0m'
     ]
-    resetAnsii = '\u001B[0m'
     if (color != false) {
-        for (colorStr in colors) {
-            if (colorStr.split('=')[0] == color) {
-                colorAnsii = colorStr.split('=')[1]
-            }
-        }
         wrap([$class: 'AnsiColorBuildWrapper']) {
-            print "${colorAnsii}[${level}] ${msg}${resetAnsii}"
+            print "${colors[color]}[${level}] ${msg}${colors.reset}"
         }
     } else {
         print "[${level}] ${msg}"
