@@ -46,6 +46,7 @@ def abortBuild() {
  * @param msg
  * @param color Colorful output or not
  */
+@NonCPS
 def info(msg, color = true) {
     printMsg(msg, "INFO", "cyan")
 }
@@ -56,6 +57,7 @@ def info(msg, color = true) {
  * @param msg
  * @param color Colorful output or not
  */
+@NonCPS
 def error(msg, color = true) {
     printMsg(msg, "INFO", "red")
 }
@@ -66,6 +68,7 @@ def error(msg, color = true) {
  * @param msg
  * @param color Colorful output or not
  */
+@NonCPS
 def success(msg, color = true) {
     printMsg(msg, "INFO", "green")
 }
@@ -76,6 +79,7 @@ def success(msg, color = true) {
  * @param msg
  * @param color Colorful output or not
  */
+@NonCPS
 def warning(msg, color = true) {
     printMsg(msg, "INFO", "yellow")
 }
@@ -87,6 +91,7 @@ def warning(msg, color = true) {
  * @param level Level of message (default INFO)
  * @param color Color to use for output or false (default)
  */
+@NonCPS
 def printMsg(msg, level = "INFO", color = false) {
     colors = [
         'red'   : '\u001B[31m',
