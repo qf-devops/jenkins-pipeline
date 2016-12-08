@@ -1,127 +1,40 @@
-/**
- * Get credentials from store
- *
- * @param id    Credentials name
- */
-def getCredentials(id) {
-    def creds = com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials(
-                    com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials.class,
-                    jenkins.model.Jenkins.instance
-                )
 
-    for (Iterator<String> credsIter = creds.iterator(); credsIter.hasNext();) {
-        c = credsIter.next();
-        if ( c.id == id ) {
-            return c;
-        }
-    }
-
-    throw new Exception("Could not find credentials for ID ${id}")
-}
+// Load shared libs
+common = evaluate(new File("${env.WORKSPACE}/libLoader/common.groovy"))
+http = evaluate(new File("${env.WORKSPACE}/libLoader/http.groovy"))
 
 /**
- * Make generic call using Salt REST API and return parsed JSON
+ * Login to Salt API and return auth token
  *
- * @param master   Salt connection object
- * @param uri   URI which will be appended to Salt server base URL
- * @param method    HTTP method to use (default GET)
- * @param data      JSON data to POST or PUT
- * @param headers   Map of additional request headers
+ * @param url            Salt API server URL
+ * @param params         Salt connection params
  */
-def restCall(master, uri, method = 'GET', data = null, headers = [:]) {
-    def connection = new URL("${master.url}${uri}").openConnection()
-    if (method != 'GET') {
-        connection.setRequestMethod(method)
-    }
-
-    connection.setRequestProperty('User-Agent', 'jenkins-groovy')
-    connection.setRequestProperty('Accept', 'application/json')
-    if (master.authToken) {
-        // XXX: removeme
-        connection.setRequestProperty('X-Auth-Token', master.authToken)
-    }
-
-    for (header in headers) {
-        connection.setRequestProperty(header.key, header.value)
-    }
-
-    if (data) {
-        connection.setDoOutput(true)
-        if (data instanceof String) {
-            dataStr = data
-        } else {
-            connection.setRequestProperty('Content-Type', 'application/json')
-            dataStr = new groovy.json.JsonBuilder(data).toString()
-        }
-        def out = new OutputStreamWriter(connection.outputStream)
-        out.write(dataStr)
-        out.close()
-    }
-
-    if ( connection.responseCode >= 200 && connection.responseCode < 300 ) {
-        res = connection.inputStream.text
-        try {
-            return new groovy.json.JsonSlurperClassic().parseText(res)
-        } catch (Exception e) {
-            return res
-        }
-    } else {
-        throw new Exception(connection.responseCode + ": " + connection.inputStream.text)
-    }
-}
-
-/**
- * Make GET request using Salt REST API and return parsed JSON
- *
- * @param master   Salt connection object
- * @param uri   URI which will be appended to Salt server base URL
- */
-def restGet(master, uri, data = null) {
-    return restCall(master, uri, 'GET', data)
-}
-
-/**
- * Make POST request using Salt REST API and return parsed JSON
- *
- * @param master   Salt connection object
- * @param uri   URI which will be appended to Docker server base URL
- * @param data  JSON Data to PUT
- */
-def restPost(master, uri, data = null) {
-    return restCall(master, uri, 'POST', data, ['Accept': '*/*'])
+def getToken(url, params) {
+    data = [
+        'username': params.creds.username,
+        'password': params.creds.password.toString(),
+        'eauth': 'pam'
+    ]
+    authToken = http.sendGetRequest("${url}/login", data, ['Accept': '*/*'])['return'][0]['token']
+    return authToken
 }
 
 /**
  * Salt connection and context parameters
  *
- * @param url                 Salt API server URL
- * @param credentialsID       ID of credentials store entry
+ * @param url            Salt API server URL
+ * @param credentialsID  ID of credentials store entry
  */
-def connection(url, credentialsId = "salt") {
+def createConnection(url, credentialsId) {
     params = [
         "url": url,
         "credentialsId": credentialsId,
         "authToken": null,
-        "creds": getCredentials(credentialsId)
+        "creds": common.getPasswordCredentials(credentialsId)
     ]
-    params["authToken"] = saltLogin(params)
+    params["authToken"] = getToken(url, params)
 
     return params
-}
-
-/**
- * Login to Salt API, return auth token
- *
- * @param master   Salt connection object
- */
-def saltLogin(master) {
-    data = [
-        'username': master.creds.username,
-        'password': master.creds.password.toString(),
-        'eauth': 'pam'
-    ]
-    authToken = restGet(master, '/login', data)['return'][0]['token']
-    return authToken
 }
 
 /**
@@ -133,7 +46,7 @@ def saltLogin(master) {
  *                 data: ['expression': 'I@openssh:server', 'type': 'compound'])
  * @param function Function to execute (eg. "state.sls")
  * @param args     Additional arguments to function
- * @param kwargs     Additional key-value arguments to function
+ * @param kwargs   Additional key-value arguments to function
  */
 def runCommand(master, client, target, function, args = null, kwargs = null) {
     data = [
@@ -150,10 +63,10 @@ def runCommand(master, client, target, function, args = null, kwargs = null) {
         data['kwarg'] = kwargs
     }
 
-    return restPost(master, '/', [data])
+    return http.sendPostRequest(master, '/', [data])
 }
 
-def pillarGet(master, target, pillar) {
+def getPillar(master, target, pillar) {
     def out = runCommand(master, 'local', target, 'pillar.get', [pillar.replace('.', ':')])
     return out
 }
@@ -177,7 +90,7 @@ def enforceState(master, target, state, output = false) {
     return out
 }
 
-def cmdRun(master, target, cmd) {
+def runCmd(master, target, cmd) {
     def out = runCommand(master, 'local', target, 'cmd.run', [cmd])
     return out
 }
