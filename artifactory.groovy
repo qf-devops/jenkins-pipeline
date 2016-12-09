@@ -334,6 +334,12 @@ def deleteRepos(art, repos, suffix) {
  * @param properties    Map with additional artifact properties
  * @param timestamp     Image tag
  */
+@NonCPS
+def convert_properties(properties) {
+    return properties.collect { k,v -> "$k=$v" }.join(';')   
+}
+
+
 def uploadDebian(art, file, properties, distribution, component, timestamp) {
     def arch = file.split('_')[-1].split('\\.')[0]
 
@@ -345,17 +351,16 @@ def uploadDebian(art, file, properties, distribution, component, timestamp) {
     properties["deb.distribution"] = distribution
     properties["deb.component"] = component
     properties["deb.architecture"] = arch
-    def props = []
-    for (prop in properties) {
-        props.push("${prop.key}=${prop.value}")
-    }
+        
+    props = convert_properties(properties)
+    println "${props}"  
 
     def uploadSpec = """{
       "files": [
         {
           "pattern": "${file}",
           "target": "${art.outRepo}",
-          "props": "${props.join(';')}"
+          "props": "${props}"
         }
       ]
     }"""
