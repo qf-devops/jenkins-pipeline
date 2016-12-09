@@ -335,7 +335,7 @@ def deleteRepos(art, repos, suffix) {
  * @param timestamp     Image tag
  */
 @NonCPS
-def convert_properties(properties) {
+def convertProperties(properties) {
     return properties.collect { k,v -> "$k=$v" }.join(';')   
 }
 
@@ -352,8 +352,7 @@ def uploadDebian(art, file, properties, distribution, component, timestamp) {
     properties["deb.component"] = component
     properties["deb.architecture"] = arch
         
-    props = convert_properties(properties)
-    println "${props}"  
+    props = convertProperties(properties)
 
     def uploadSpec = """{
       "files": [
