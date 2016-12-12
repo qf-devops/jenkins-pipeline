@@ -175,7 +175,7 @@ def getCredentials(id) {
  *                            connection
  * @param credentialsID       ID of credentials store entry
  */
-def connection(url, dockerRegistryBase, dockerRegistrySsl, outRepo, credentialsId = "artifactory") {
+def connection(url, dockerRegistryBase, dockerRegistrySsl, outRepo, credentialsId = "artifactory", serverName = null) {
     params = [
         "url": url,
         "credentialsId": credentialsId,
@@ -192,6 +192,11 @@ def connection(url, dockerRegistryBase, dockerRegistrySsl, outRepo, credentialsI
     } else {
         params["docker"]["proto"] = "http"
     }
+
+    if (serverName ?: null) {
+        params['server'] = Artifactory.server(serverName)
+    }
+
     params["docker"]["url"] = "${params.docker.proto}://${params.outRepo}.${params.docker.base}"
 
     return params
@@ -329,31 +334,36 @@ def deleteRepos(art, repos, suffix) {
  * @param properties    Map with additional artifact properties
  * @param timestamp     Image tag
  */
-def uploadDebian(art, file, properties, distribution, component, timestamp, data = null) {
-    def fh
-    if (file instanceof java.io.File) {
-        fh = file
-    } else {
-        fh = new File(file)
-    }
+@NonCPS
+def convertProperties(properties) {
+    return properties.collect { k,v -> "$k=$v" }.join(';')   
+}
 
-    def arch = fh.name.split('_')[-1].split('\\.')[0]
-    if (data) {
-        restPut(art, "/${art.outRepo}/pool/${fh.name};deb.distribution=${distribution};deb.component=${component};deb.architecture=${arch}", data)
-    } else {
-        restPut(art, "/${art.outRepo}/pool/${fh.name};deb.distribution=${distribution};deb.component=${component};deb.architecture=${arch}", fh)
-    }
+
+def uploadDebian(art, file, properties, distribution, component, timestamp) {
+    def arch = file.split('_')[-1].split('\\.')[0]
 
     /* Set artifact properties */
     properties["build.number"] = currentBuild.build().environment.BUILD_NUMBER
     properties["build.name"] = currentBuild.build().environment.JOB_NAME
     properties["timestamp"] = timestamp
-    setProperty(
-        art,
-        "pool/${fh.name}",
-        timestamp,
-        properties
-    )
+
+    properties["deb.distribution"] = distribution
+    properties["deb.component"] = component
+    properties["deb.architecture"] = arch
+        
+    props = convertProperties(properties)
+
+    def uploadSpec = """{
+      "files": [
+        {
+          "pattern": "${file}",
+          "target": "${art.outRepo}",
+          "props": "${props}"
+        }
+      ]
+    }"""
+    art.server.upload(uploadSpec)
 }
 
 /**
