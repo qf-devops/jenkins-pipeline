@@ -1,14 +1,8 @@
-
 /**
- * Parse HEAD of current directory and return commit hash
+ *
+ * Git functions
+ *
  */
-def getCommit() {
-    git_commit = sh (
-        script: 'git rev-parse HEAD',
-        returnStdout: true
-    ).trim()
-    return git_commit
-}
 
 /**
  * Checkout single git repository
@@ -18,7 +12,7 @@ def getCommit() {
  * @param branch          Source Git repository branch
  * @param credentialsId   Credentials ID to use for source Git
  */
-def checkoutRepository(path, url, branch, credentialsId = null){
+def checkoutGitRepository(path, url, branch, credentialsId = null){
     checkout([
         $class: 'GitSCM',
         branches: [[name: "*/${branch}"]],
@@ -33,6 +27,17 @@ def checkoutRepository(path, url, branch, credentialsId = null){
 }
 
 /**
+ * Parse HEAD of current directory and return commit hash
+ */
+def getGitCommit() {
+    git_commit = sh (
+        script: 'git rev-parse HEAD',
+        returnStdout: true
+    ).trim()
+    return git_commit
+}
+
+/**
  * Checkout git repositories in parallel
  *
  * @param path            Directory to checkout to
@@ -42,7 +47,7 @@ def checkoutRepository(path, url, branch, credentialsId = null){
  * @param poll            Poll automatically
  * @param clean           Clean status
  */
-def gitCheckoutStep(path, url, branch, credentialsId = null, poll = true, clean = true) {
+def checkoutGitParallel(path, url, branch, credentialsId = null, poll = true, clean = true) {
     return {
         print "Checking out ${url}, branch ${branch} into ${path}"
         dir(path) {
@@ -80,5 +85,3 @@ def mirrorReporitory(sourceUrl, targetUrl, credentialsId, branches, followTags =
         agentSh "git push ${followTagsArg} target HEAD:${branch}"
     }
 }
-
-return this;

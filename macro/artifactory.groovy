@@ -1,4 +1,10 @@
 /**
+ *
+ * Artifactory functions
+ *
+ */
+
+/**
  * Make generic call using Artifactory REST API and return parsed JSON
  *
  * @param art   Artifactory connection object
@@ -142,27 +148,6 @@ def parseProperties(properties) {
 def setProperty(art, name, version, properties, recursive = 0) {
     props = parseProperties(properties)
     restPut(art, "/storage/${art.outRepo}/${name}/${version}?properties=${props}&recursive=${recursive}")
-}
-
-/**
- * Get credentials from store
- *
- * @param id    Credentials name
- */
-def getCredentials(id) {
-    def creds = com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials(
-                    com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials.class,
-                    jenkins.model.Jenkins.instance
-                )
-
-    for (Iterator<String> credsIter = creds.iterator(); credsIter.hasNext();) {
-        c = credsIter.next();
-        if ( c.id == id ) {
-            return c;
-        }
-    }
-
-    throw new Exception("Could not find credentials for ID ${id}")
 }
 
 /**
@@ -397,5 +382,3 @@ def uploadPackageStep(art, file, properties, distribution, component, timestamp)
         )
     }
 }
-
-return this;

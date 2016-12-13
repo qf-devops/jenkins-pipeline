@@ -1,3 +1,8 @@
+/**
+ *
+ * HTTP functions
+ *
+ */
 
 /**
  * Make generic HTTP call and return parsed JSON
@@ -8,7 +13,7 @@
  * @param headers   Map of additional request headers
  */
 @NonCPS
-def sendRequest(url, method = 'GET', data = null, headers = [:]) {
+def sendHttpRequest(url, method = 'GET', data = null, headers = [:]) {
 
     def connection = new URL(url).openConnection()
     if (method != 'GET') {
@@ -60,8 +65,8 @@ def sendRequest(url, method = 'GET', data = null, headers = [:]) {
  * @param url     URL which will requested
  * @param data    JSON data to PUT
  */
-def sendGetRequest(url, data = null, headers = [:]) {
-    return sendRequest(url, 'GET', data, headers)
+def sendHttpGetRequest(url, data = null, headers = [:]) {
+    return sendHttpRequest(url, 'GET', data, headers)
 }
 
 /**
@@ -70,8 +75,6 @@ def sendGetRequest(url, data = null, headers = [:]) {
  * @param url     URL which will requested
  * @param data    JSON data to PUT
  */
-def sendPostRequest(url, data = null, headers = [:]) {
-    return sendRequest(url, 'POST', data, headers)
+def sendHttpPostRequest(url, data = null, headers = [:]) {
+    return sendHttpRequest(url, 'POST', data, headers)
 }
-
-return this;
