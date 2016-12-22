@@ -9,14 +9,14 @@ def uploadPackage(file, server, repo) {
     def pkg = file.split('/')[-1].split('_')[0]
     def jobName = currentBuild.build().environment.JOB_NAME
 
-    sh("curl -s -f -F file=@${file} ${server}/api/files/${pkg}")
-    sh("curl -s -o curl_out.log -f -X POST ${server}/api/repos/${repo}/file/${pkg}")
+    sh("curl -v -f -F file=@${file} ${server}/api/files/${pkg}")
+    sh("curl -v -o curl_out_${pkg}.log -f -X POST ${server}/api/repos/${repo}/file/${pkg}")
 
     try {
-        sh("cat curl_out.log | json_pp | grep 'Unable to add package to repo'")
+        sh("cat curl_out_${pkg}.log | json_pp | grep 'Unable to add package to repo' && exit 1")
     } catch (err) {
         sh("curl -s -f -X DELETE ${server}/api/files/${pkg}")
-        error("[ERROR] Package already exists in repo, did you forget to add changelog entry and raise version?")
+        error("Package ${pkg} already exists in repo, did you forget to add changelog entry and raise version?")
     }
 }
 
@@ -39,10 +39,10 @@ def uploadPackageStep(file, server, repo) {
 
 def snapshotRepo(server, repo, timestamp) {
     def snapshot = "${repo}-${timestamp}"
-    sh("curl -f -X POST -H 'Content-Type: application/json' --data '{\\\"Name\\\":\\\"$snapshot\\\"}' ${server}/api/repos/${repo}/snapshots")
+    sh("curl -f -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"$snapshot\"}' ${server}/api/repos/${repo}/snapshots")
 }
 
-def cleanupSnapshots(server, config='/etc/aptly-publisher.conf', opts='-d --timeout 600') {
+def cleanupSnapshots(server, config='/etc/aptly-publisher.yaml', opts='-d --timeout 600') {
     sh("aptly-publisher -c ${config} ${opts} --url ${server} cleanup")
 }
 
@@ -69,7 +69,7 @@ def promotePublish(server, source, target, recreate=false, components=null, pack
     sh("aptly-publisher --url ${server} promote --source ${source} --target ${target} ${opts}")
 }
 
-def publish(server, config='/etc/aptly-publisher.conf', recreate=false, opts='-d --timeout 600') {
+def publish(server, config='/etc/aptly-publisher.yaml', recreate=false, opts='-d --timeout 600') {
     if (recreate == true) {
         opts = "${opts} --recreate"
     }
