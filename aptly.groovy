@@ -6,7 +6,7 @@
  * @param repo          Repository name
  */
 def uploadPackage(file, server, repo) {
-    def pkg = file.split('_')[0]
+    def pkg = file.split('/')[-1].split('_')[0]
     def jobName = currentBuild.build().environment.JOB_NAME
 
     sh("curl -s -f -F file=@${file} ${server}/api/files/${pkg}")
