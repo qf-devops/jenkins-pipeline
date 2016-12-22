@@ -75,3 +75,5 @@ def publish(server, config='/etc/aptly-publisher.conf', recreate=false, opts='-d
     }
     sh("aptly-publisher --url ${server} -c ${config} ${opts} publish")
 }
+
+return this;
