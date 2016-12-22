@@ -37,7 +37,7 @@ def uploadPackageStep(file, server, repo) {
     }
 }
 
-def snapshotRepo(repo, timestamp) {
+def snapshotRepo(server, repo, timestamp) {
     def snapshot = "${repo}-${timestamp}"
     sh("curl -f -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"$snapshot\"}' ${server}/api/repos/${repo}/snapshots')
 }
@@ -67,4 +67,11 @@ def promotePublish(server, source, target, recreate=false, components=null, pack
         opts = "${opts} --recreate"
     }
     sh("aptly-publisher --url ${server} promote --source ${source} --target ${target} ${opts}")
+}
+
+def publish(server, config='/etc/aptly-publisher.conf', recreate=false, opts='-d --timeout 600') {
+    if (recreate == true) {
+        opts = "${opts} --recreate"
+    }
+    sh("aptly-publisher --url ${server} -c ${config} ${opts} publish")
 }
