@@ -39,7 +39,7 @@ def uploadPackageStep(file, server, repo) {
 
 def snapshotRepo(server, repo, timestamp) {
     def snapshot = "${repo}-${timestamp}"
-    sh("curl -f -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"$snapshot\"}' ${server}/api/repos/${repo}/snapshots')
+    sh("curl -f -X POST -H 'Content-Type: application/json' --data '{\\\"Name\\\":\\\"$snapshot\\\"}' ${server}/api/repos/${repo}/snapshots")
 }
 
 def cleanupSnapshots(server, config='/etc/aptly-publisher.conf', opts='-d --timeout 600') {
