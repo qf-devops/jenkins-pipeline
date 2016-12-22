@@ -1,0 +1,70 @@
+/**
+ * Upload package into local repo
+ *
+ * @param file          File path
+ * @param server        Server host
+ * @param repo          Repository name
+ */
+def uploadPackage(file, server, repo) {
+    def pkg = file.split('_')[0]
+    def jobName = currentBuild.build().environment.JOB_NAME
+
+    sh("curl -s -f -F file=@${file} ${server}/api/files/${pkg}")
+    sh("curl -s -o curl_out.log -f -X POST ${server}/api/repos/${repo}/file/${pkg}")
+
+    try {
+        sh("cat curl_out.log | json_pp | grep 'Unable to add package to repo'")
+    } catch (err) {
+        sh("curl -s -f -X DELETE ${server}/api/files/${pkg}")
+        error("[ERROR] Package already exists in repo, did you forget to add changelog entry and raise version?")
+    }
+}
+
+/**
+ * Build step to upload package. For use with eg. parallel
+ *
+ * @param file          File path
+ * @param server        Server host
+ * @param repo          Repository name
+ */
+def uploadPackageStep(file, server, repo) {
+    return {
+        uploadPackage(
+            file,
+            server,
+            repo
+        )
+    }
+}
+
+def snapshotRepo(repo, timestamp) {
+    def snapshot = "${repo}-${timestamp}"
+    sh("curl -f -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"$snapshot\"}' ${server}/api/repos/${repo}/snapshots')
+}
+
+def cleanupSnapshots(server, config='/etc/aptly-publisher.conf', opts='-d --timeout 600') {
+    sh("aptly-publisher -c ${config} ${opts} --url ${server} cleanup")
+}
+
+def diffPublish(server, source, target, components=null, opts='--timeout 600') {
+    if (components) {
+        def componentsStr = components.join(' ')
+        opts = "${opts} --components ${componentsStr}"
+    }
+    sh("aptly-publisher --dry --url ${server} promote --source ${source} --target ${target} --diff ${opts}")
+}
+
+def promotePublish(server, source, target, recreate=false, components=null, packages=null, opts='-d --timeout 600') {
+    if (components) {
+        def componentsStr = components.join(' ')
+        opts = "${opts} --components ${componentsStr}"
+    }
+    if (packages) {
+        def packagesStr = packages.join(' ')
+        opts = "${opts} --packages ${packagesStr}"
+    }
+    if (recreate == true) {
+        opts = "${opts} --recreate"
+    }
+    sh("aptly-publisher --url ${server} promote --source ${source} --target ${target} ${opts}")
+}
