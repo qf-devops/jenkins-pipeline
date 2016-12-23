@@ -321,7 +321,7 @@ def getSaltProcess(saltProcess) {
             // Run whole k8s controller
             [tgt: 'I@kubernetes:master', fun: 'state.sls', arg: ['kubernetes.controller']],
             // Run whole k8s controller
-            [tgt: 'I@kubernetes:master', fun: 'state.sls', arg: ['kubernetes'], batch:1],
+            [tgt: 'I@kubernetes:master', fun: 'state.sls', arg: ['kubernetes'], batch: 1],
             // Revert comment nameserver
             [tgt: 'I@kubernetes:master', fun: 'cmd.run', arg: ["sed -i 's/nameserver 10.254.0.10/#nameserver 10.254.0.10/g' /etc/resolv.conf"]],
         ],
