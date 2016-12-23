@@ -19,25 +19,30 @@ Provision pipelines
 Provision heat stack with MCP lab
 `````````````````````````````````
 
-pipeline/provision/heat_mcp_lab.groovy
+* script: pipeline/provision/heat_mcp_lab.groovy
+* macros: common, python, salt, openstack, http
 
 
 Provision heat stack with MK lab
 ````````````````````````````````
 
-pipeline/provision/heat_mk_lab.groovy
+* script: pipeline/provision/heat_mk_lab.groovy
+* macros: common, python, salt, openstack, http
 
 
 Utility pipelines
 -----------------
 
+
 Run arbitrary Salt process
 ``````````````````````````
 
-pipeline/utility/jenkins_job.groovy
+* script: pipeline/utility/jenkins_job.groovy
+* macros: common, salt, http
 
 
 Update Jenkins master jobs
 ``````````````````````````
 
-pipeline/utility/salt_process.groovy
+* script: pipeline/utility/salt_process.groovy
+* macros: common, salt, http
