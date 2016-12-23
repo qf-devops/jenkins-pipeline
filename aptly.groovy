@@ -31,12 +31,13 @@ def uploadPackage(file, server, repo, skipExists=false) {
  * @param server        Server host
  * @param repo          Repository name
  */
-def uploadPackageStep(file, server, repo) {
+def uploadPackageStep(file, server, repo, skipExists=false) {
     return {
         uploadPackage(
             file,
             server,
-            repo
+            repo,
+            skipExists
         )
     }
 }
