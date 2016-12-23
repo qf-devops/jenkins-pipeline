@@ -5,7 +5,7 @@
  * @param server        Server host
  * @param repo          Repository name
  */
-def uploadPackage(file, server, repo) {
+def uploadPackage(file, server, repo, skipExists=false) {
     def pkg = file.split('/')[-1].split('_')[0]
     def jobName = currentBuild.build().environment.JOB_NAME
 
@@ -16,7 +16,11 @@ def uploadPackage(file, server, repo) {
         sh("cat curl_out_${pkg}.log | json_pp | grep 'Unable to add package to repo' && exit 1 || exit 0")
     } catch (err) {
         sh("curl -s -f -X DELETE ${server}/api/files/${pkg}")
-        error("Package ${pkg} already exists in repo, did you forget to add changelog entry and raise version?")
+        if (skipExists == true) {
+            println "[WARN] Package ${pkg} already exists in repo so skipping it's upload as requested"
+        } else {
+            error("Package ${pkg} already exists in repo, did you forget to add changelog entry and raise version?")
+        }
     }
 }
 
