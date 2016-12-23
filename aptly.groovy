@@ -13,7 +13,7 @@ def uploadPackage(file, server, repo) {
     sh("curl -v -o curl_out_${pkg}.log -f -X POST ${server}/api/repos/${repo}/file/${pkg}")
 
     try {
-        sh("cat curl_out_${pkg}.log | json_pp | grep 'Unable to add package to repo' && exit 1")
+        sh("cat curl_out_${pkg}.log | json_pp | grep 'Unable to add package to repo' && exit 1 || exit 0")
     } catch (err) {
         sh("curl -s -f -X DELETE ${server}/api/files/${pkg}")
         error("Package ${pkg} already exists in repo, did you forget to add changelog entry and raise version?")
