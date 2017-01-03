@@ -86,7 +86,7 @@ def buildSourceGbp(dir, image="debian:sid") {
 def runLintian(changes, profile="debian", image="debian:sid") {
     def img = docker.image(image)
     workspace = getWorkspace()
-    sh("docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c 'apt-get update && apt-get install -y lintian && cd ${dir} && lintian --no-tag-display-limit -Ii -E --pedantic --profile=${profile} ${changes}'")
+    sh("docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c 'apt-get update && apt-get install -y lintian && lintian --no-tag-display-limit -Ii -E --pedantic --profile=${profile} ${changes}'")
 }
 
 return this;
