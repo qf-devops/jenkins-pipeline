@@ -9,7 +9,7 @@ def getWorkspace() {
     return workspace
 }
 
-def clean(image="debian:sid") {
+def cleanup(image="debian:sid") {
     def img = docker.image(image)
 
     workspace = getWorkspace()
@@ -27,7 +27,7 @@ def buildBinary(file, image="debian:sid") {
     def img = docker.image(image)
 
     workspace = getWorkspace()
-    sh("docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c 'apt-get update && apt-get install -y build-essential devscripts && dpkg-source -x ${file} build-area/${pkg} && cd build-area/${pkg} && dpkg-checkbuilddeps 2>&1|rev|cut -d : -f 1|rev|sed \"s,(.*),,g\"|xargs apt-get install -y && debuild --no-lintian -uc -us'")
+    sh("docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c 'apt-get update && apt-get install -y build-essential devscripts && dpkg-source -x ${file} build-area/${pkg} && cd build-area/${pkg} && dpkg-checkbuilddeps 2>&1|rev|cut -d : -f 1|rev|sed \"s,(.*),,g\"|xargs apt-get install -y && debuild --no-lintian -uc -us -b'")
 }
 
 /*
@@ -86,7 +86,7 @@ def buildSourceGbp(dir, image="debian:sid") {
 def runLintian(changes, profile="debian", image="debian:sid") {
     def img = docker.image(image)
     workspace = getWorkspace()
-    sh("docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c 'apt-get update && apt-get install -y lintian && cd ${dir} && lintian --no-tag-display-limit -Ii -E --pedantic --profile=${profile} ${changes}'")
+    sh("docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c 'apt-get update && apt-get install -y lintian && lintian --no-tag-display-limit -Ii -E --pedantic --profile=${profile} ${changes}'")
 }
 
 return this;
