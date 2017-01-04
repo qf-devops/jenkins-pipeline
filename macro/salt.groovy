@@ -195,7 +195,7 @@ def printSaltResult(result, onlyChanges = true, raw = false) {
 
 def runSaltProcessStep(master, tgt, fun, arg = [], batch = null) {
     if (batch) {
-        result = runSaltCommand(master, 'local_batch', ['expression': tgt, 'type': 'compound'], fun, batch, arg)
+        result = runSaltCommand(master, 'local_batch', ['expression': tgt, 'type': 'compound'], fun, String.valueOf(batch), arg)
     }
     else {
         result = runSaltCommand(master, 'local', ['expression': tgt, 'type': 'compound'], fun, batch, arg)
