@@ -57,35 +57,36 @@ node {
     }
 
     stage("Install core infra") {
-        runSaltProcess(saltMaster, 'install_foundation_infra')
+        installFoundationInfra(saltMaster)
+        validateFoundationInfra(saltMaster)
     }
 
     stage("Install OpenStack infra") {
-        runSaltProcess(saltMaster, 'install_openstack_mk_infra')
+        installOpenstackMkInfra(saltMaster)
     }
 
     stage("Install OpenStack control") {
-        runSaltProcess(saltMaster, 'install_openstack_mk_control')
+        installOpenstackMkControl(saltMaster)
     }
 
     stage("Install OpenContrail control") {
-        runSaltProcess(saltMaster, 'install_openstack_mk_network')
+        installOpenstackMkNetwork(saltMaster)
     }
 
     stage("Install OpenStack compute") {
-        runSaltProcess(saltMaster, 'install_openstack_mk_compute')
+        installOpenstackMkCompute(saltMaster)
     }
 
     stage("Install StackLight control") {
-        runSaltProcess(saltMaster, 'install_stacklight_control')
+        installStacklightControl(saltMaster)
     }
 
     stage("Install StackLight clients") {
-        runSaltProcess(saltMaster, 'install_stacklight_client')
+        installStacklightClient(saltMaster)
     }
 
     stage("Run tests on OpenStack cloud") {
-    //    runSaltProcess(saltMaster, 'install_mk_compute')
+    //    validateOpenstackMkControl(saltMaster)
     }
 
     //stage('Delete Heat stack') {

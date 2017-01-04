@@ -57,19 +57,20 @@ node {
     }
 
     stage("Install core infra") {
-        runSaltProcess(saltMaster, 'install_foundation_infra')
+        installFoundationInfra(saltMaster)
+        validateFoundationInfra(saltMaster)
     }
 
     stage("Install OpenStack infra") {
-        runSaltProcess(saltMaster, 'install_openstack_mcp_infra')
+        installOpenstackMcpInfra(saltMaster)
     }
 
     stage("Install OpenStack control") {
-        runSaltProcess(saltMaster, 'install_openstack_mcp_control')
+        installOpenstackMcpControl(saltMaster)
     }
 
     stage("Install OpenStack compute") {
-        runSaltProcess(saltMaster, 'install_openstack_mcp_compute')
+        installOpenstackMcpCompute(saltMaster)
     }
 
     stage("Run tests on OpenStack cloud") {
