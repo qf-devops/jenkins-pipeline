@@ -73,7 +73,7 @@ def buildSourceUscan(dir, image="debian:sid") {
 def buildSourceGbp(dir, image="debian:sid") {
     def img = docker.image(image)
     workspace = getWorkspace()
-    sh("docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c 'apt-get update && apt-get install -y build-essential git-buildpackage && cd ${dir} && gbp buildpackage -nc --git-force-create --git-notify=false --git-ignore-branch --git-ignore-new --git-verbose -S -uc -us'")
+    sh("docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c 'apt-get update && apt-get install -y build-essential git-buildpackage && cd ${dir} && gbp buildpackage -nc --git-force-create --git-notify=false --git-ignore-branch --git-ignore-new --git-verbose --git-export-dir=../build-area -S -uc -us'")
 }
 
 /*
