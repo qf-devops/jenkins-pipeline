@@ -246,6 +246,9 @@ def mirrorGit(sourceUrl, targetUrl, credentialsId, branches, followTags = false,
         followTagsArg = followTags ? "--follow-tags" : ""
         agentSh "git push ${followTagsArg} target HEAD:${branch}"
     }
+    if (followTags == true) {
+        agentSh "git push target --tags"
+    }
 }
 
 return this;
