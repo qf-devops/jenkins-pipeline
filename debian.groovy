@@ -28,10 +28,10 @@ def buildBinary(file, image="debian:sid", extraRepoUrl=null, extraRepoKeyUrl=nul
 
     workspace = getWorkspace()
     sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c '
-            [ -z "${extraRepoUrl}" ] || echo "${extraRepoUrl}" >/etc/apt/sources.list.d/extra.list &&
-            [ -z "${extraRepoKeyUrl}" ] || (
+            [[ -z "${extraRepoUrl}" || "${extraRepoUrl}" != "null" ]] || echo "${extraRepoUrl}" >/etc/apt/sources.list.d/extra.list &&
+            [[ -z "${extraRepoKeyUrl}" || "${extraRepoKeyUrl}" != "null" ]] || (
                 which curl || (apt-get update && apt-get install -y curl) &&
-                curl --insecure -ss -f "${extraRepoKeyUrl}" | apt-key add - &&
+                curl --insecure -ss -f "${extraRepoKeyUrl}" | apt-key add -
             ) &&
             apt-get update && apt-get install -y build-essential devscripts equivs &&
             dpkg-source -x ${file} build-area/${pkg} && cd build-area/${pkg} &&
