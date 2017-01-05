@@ -97,7 +97,7 @@ def runLintian(changes, profile="debian", image="debian:sid") {
     workspace = getWorkspace()
     sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c '
             apt-get update && apt-get install -y lintian &&
-            lintian --no-tag-display-limit -Ii -E --pedantic --profile=${profile} ${changes}'""")
+            lintian -Ii -E --pedantic --profile=${profile} ${changes}'""")
 }
 
 return this;
