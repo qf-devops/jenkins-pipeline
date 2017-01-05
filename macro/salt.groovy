@@ -300,9 +300,13 @@ def installOpenstackMkControl(master) {
 
 def installOpenstackMkNetwork(master) {
     // Install opencontrail database services
-    runSaltProcessStep(master, 'I@opencontrail:database', 'state.sls', ['opencontrail.database'], 1)
+    //runSaltProcessStep(master, 'I@opencontrail:database', 'state.sls', ['opencontrail.database'], 1)
+    runSaltProcessStep(master, 'ntw01*', 'state.sls', ['opencontrail.database'])
+    runSaltProcessStep(master, 'I@opencontrail:database', 'state.sls', ['opencontrail.database'])
     // Install opencontrail control services
-    runSaltProcessStep(master, 'I@opencontrail:control', 'state.sls', ['opencontrail'], 1)
+    //runSaltProcessStep(master, 'I@opencontrail:control', 'state.sls', ['opencontrail'], 1)
+    runSaltProcessStep(master, 'ntw01*', 'state.sls', ['opencontrail'])
+    runSaltProcessStep(master, 'I@opencontrail:control', 'state.sls', ['opencontrail'])
     // Provision opencontrail control services
     runSaltProcessStep(master, 'I@opencontrail:control:id:1', 'cmd.run', ['/usr/share/contrail-utils/provision_control.py --api_server_ip 172.16.10.254 --api_server_port 8082 --host_name ctl01 --host_ip 172.16.10.101 --router_asn 64512 --admin_password workshop --admin_user admin --admin_tenant_name admin --oper add'])
     runSaltProcessStep(master, 'I@opencontrail:control:id:1', 'cmd.run', ['/usr/share/contrail-utils/provision_control.py --api_server_ip 172.16.10.254 --api_server_port 8082 --host_name ctl02 --host_ip 172.16.10.102 --router_asn 64512 --admin_password workshop --admin_user admin --admin_tenant_name admin --oper add'])
