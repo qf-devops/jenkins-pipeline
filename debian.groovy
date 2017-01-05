@@ -27,7 +27,8 @@ def buildBinary(file, image="debian:sid") {
     def img = docker.image(image)
 
     workspace = getWorkspace()
-    sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c 'apt-get update && apt-get install -y build-essential devscripts equivs &&
+    sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c '
+            apt-get update && apt-get install -y build-essential devscripts equivs &&
             dpkg-source -x ${file} build-area/${pkg} && cd build-area/${pkg} &&
             mk-build-deps -t "apt-get -o Debug::pkgProblemResolver=yes -y" -i debian/control
             debuild --no-lintian -uc -us -b'""")
@@ -64,7 +65,10 @@ def buildSource(dir, image="debian:sid") {
 def buildSourceUscan(dir, image="debian:sid") {
     def img = docker.image(image)
     workspace = getWorkspace()
-    sh("docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c 'apt-get update && apt-get install -y build-essential devscripts && cd ${dir} && uscan --download-current-version && dpkg-buildpackage -S -nc -uc -us'")
+    sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c '
+            apt-get update && apt-get install -y build-essential devscripts &&
+            cd ${dir} && uscan --download-current-version &&
+            dpkg-buildpackage -S -nc -uc -us'""")
 }
 
 /*
@@ -76,7 +80,9 @@ def buildSourceUscan(dir, image="debian:sid") {
 def buildSourceGbp(dir, image="debian:sid") {
     def img = docker.image(image)
     workspace = getWorkspace()
-    sh("docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c 'apt-get update && apt-get install -y build-essential git-buildpackage && cd ${dir} && gbp buildpackage -nc --git-force-create --git-notify=false --git-ignore-branch --git-ignore-new --git-verbose --git-export-dir=../build-area -S -uc -us'")
+    sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c '
+            apt-get update && apt-get install -y build-essential git-buildpackage &&
+            cd ${dir} && gbp buildpackage -nc --git-force-create --git-notify=false --git-ignore-branch --git-ignore-new --git-verbose --git-export-dir=../build-area -S -uc -us'""")
 }
 
 /*
@@ -89,7 +95,9 @@ def buildSourceGbp(dir, image="debian:sid") {
 def runLintian(changes, profile="debian", image="debian:sid") {
     def img = docker.image(image)
     workspace = getWorkspace()
-    sh("docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c 'apt-get update && apt-get install -y lintian && lintian --no-tag-display-limit -Ii -E --pedantic --profile=${profile} ${changes}'")
+    sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c '
+            apt-get update && apt-get install -y lintian &&
+            lintian --no-tag-display-limit -Ii -E --pedantic --profile=${profile} ${changes}'""")
 }
 
 return this;
