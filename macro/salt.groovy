@@ -394,3 +394,9 @@ def installStacklightControl(master) {
     runSaltProcessStep(master, 'I@elasticsearch:client', 'state.sls', ['elasticsearch.client'])
     runSaltProcessStep(master, 'I@kibana:client', 'state.sls', ['kibana.client'])
 }
+
+
+def installStacklightClient(master) {
+    runSaltProcessStep(master, 'I@heka:log_collector', 'state.sls', ['heka'])
+    runSaltProcessStep(master, 'I@collectd:client', 'state.sls', ['collectd'])
+}
