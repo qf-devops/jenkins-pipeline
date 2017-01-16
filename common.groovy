@@ -216,10 +216,19 @@ def agentSh(cmd) {
  * @param url   url of remote host
  */
 def ensureKnownHosts(url) {
-    uri = new URI(url)
-    port = uri.port ?: 22
-
-    sh "test -f ~/.ssh/known_hosts && grep ${uri.host} ~/.ssh/known_hosts || ssh-keyscan -p ${port} ${uri.host} >> ~/.ssh/known_hosts"
+    // test for git@github.com:organization/repository like URLs
+    p = ~/.+@(.+\..+)\:{1}.*/
+    result = p.matcher(url)
+    host = ""
+    if (result.matches()) {
+        host = result.group(1)
+        port = 22
+    } else {
+        parsed = new URI(url)
+        host = parsed.host
+        port = parsed.port && parsed.port > 0 ? parsed.port: 22
+    }
+    sh "test -f ~/.ssh/known_hosts && grep ${host} ~/.ssh/known_hosts || ssh-keyscan -p ${port} ${host} >> ~/.ssh/known_hosts"
 }
 
 /**
