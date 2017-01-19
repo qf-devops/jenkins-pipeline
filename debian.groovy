@@ -91,7 +91,7 @@ def buildSourceGbp(dir, image="debian:sid", snapshot=false) {
             apt-get update && apt-get install -y build-essential git-buildpackage &&
             cd ${dir} &&
             [[ "${snapshot}" == 'false' ]] || (
-                VERSION=`dpkg-parsechangelog --count 1 | awk '/^Version/ {print $2}'` &&
+                VERSION=`dpkg-parsechangelog --count 1 | awk '/^Version/ {print \$2}'` &&
                 UPSTREAM_VERSION=`echo \$VERSION | cut -d '-' -f 1` &&
                 REVISION=`echo \$VERSION | cut -d '-' -f 2` &&
                 grep native debian/source/format || (
