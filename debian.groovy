@@ -44,8 +44,9 @@ def buildBinary(file, image="debian:sid", extraRepoUrl=null, extraRepoKeyUrl=nul
  *
  * @param dir   Tree to build
  * @param image Image name to use for build (default debian:sid)
+ * @param snapshot Generate snapshot version (default false)
  */
-def buildSource(dir, image="debian:sid") {
+def buildSource(dir, image="debian:sid", snapshot=false) {
     def isGit
     try {
         sh("test -d ${dir}/.git")
@@ -55,7 +56,7 @@ def buildSource(dir, image="debian:sid") {
     }
 
     if (isGit == true) {
-        buildSourceGbp(dir, image)
+        buildSourceGbp(dir, image, snapshot)
     } else {
         buildSourceUscan(dir, image)
     }
@@ -81,13 +82,32 @@ def buildSourceUscan(dir, image="debian:sid") {
  *
  * @param dir   Tree to build
  * @param image Image name to use for build (default debian:sid)
+ * @param snapshot Generate snapshot version (default false)
  */
-def buildSourceGbp(dir, image="debian:sid") {
+def buildSourceGbp(dir, image="debian:sid", snapshot=false) {
     def img = docker.image(image)
     workspace = getWorkspace()
     sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c '
             apt-get update && apt-get install -y build-essential git-buildpackage &&
-            cd ${dir} && gbp buildpackage -nc --git-force-create --git-notify=false --git-ignore-branch --git-ignore-new --git-verbose --git-export-dir=../build-area -S -uc -us'""")
+            cd ${dir} &&
+            [[ "${snapshot}" == 'false' ]] || (
+                VERSION=`dpkg-parsechangelog --count 1 | awk '/^Version/ {print $2}'` &&
+                UPSTREAM_VERSION=`echo \$VERSION | cut -d '-' -f 1` &&
+                REVISION=`echo \$VERSION | cut -d '-' -f 2` &&
+                grep native debian/source/format || (
+                    UPSTREAM_BRANCH=`gbp config DEFAULT.upstream-branch|cut -d = -f 2` &&
+                    UPSTREAM_REV=`git rev-parse --short \$UPSTREAM_BRANCH` &&
+                    NEW_VERSION=\$UPSTREAM_VERSION+\$UPSTREAM_REV-\$REVISION &&
+                    echo "Generating new upstream version \$UPSTREAM_VERSION-\$UPSTREAM_REV"
+                    git tag \$UPSTREAM_VERSION+\$UPSTREAM_REV \$UPSTREAM_BRANCH &&
+                    git merge -X theirs \$UPSTREAM_VERSION+\$UPSTREAM_REV
+                ) &&
+                grep quilt debian/source/format || (
+                    NEW_VERSION=\$VERSION+`git rev-parse --short HEAD`
+                ) &&
+                gbp dch --auto -S --multimaint-merge --ignore-branch --new-version=\$NEW_VERSION --distribution `lsb_release -c -s` --force-distribution
+            ) &&
+            gbp buildpackage -nc --git-force-create --git-notify=false --git-ignore-branch --git-ignore-new --git-verbose --git-export-dir=../build-area -S -uc -us'""")
 }
 
 /*
