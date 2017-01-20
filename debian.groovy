@@ -90,7 +90,7 @@ def buildSourceGbp(dir, image="debian:sid", snapshot=false) {
     sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -xc '
             apt-get update && apt-get install -y build-essential git-buildpackage &&
             cd ${dir} &&
-            [[ "${snapshot}" == "false" ]] || {
+            [[ "${snapshot}" == "false" ]] || (
                 VERSION=`dpkg-parsechangelog --count 1 | grep Version: | sed "s,Version: ,,g"` &&
                 UPSTREAM_VERSION=`echo \$VERSION | cut -d "-" -f 1` &&
                 REVISION=`echo \$VERSION | cut -d "-" -f 2` &&
