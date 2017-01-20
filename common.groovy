@@ -287,15 +287,15 @@ def jenkinsHasPlugin(pluginName){
  * @param buildUrl build url param, if empty env.JOB_NAME will be used
  * @param mailFrom mail FROM param, if empty "jenkins" will be used, it's mandatory for sending email notifications
  * @param mailTo mail TO param, it's mandatory for sending email notifications
- */ 
-def sendNotification(buildStatus, msgText="",enabledNotifications = [] notificatedTypes=["successful","unstable","failed"], jobName=null, buildNumber=null, buildUrl=null, mailFrom="jenkins", mailTo=null){
+ */
+def sendNotification(buildStatus, msgText="",enabledNotifications = [] notificatedTypes=["successful","unstable","failure"], jobName=null, buildNumber=null, buildUrl=null, mailFrom="jenkins", mailTo=null){
     // Default values
     def colorName = 'blue'
     def colorCode = '#0000FF'
     def buildStatusParam = buildStatus != null && buildStatus != "" ? buildStatus : "SUCCESSFUL"
     def jobNameParam = jobName != null && jobName != "" ? jobName : env.JOB_NAME
-    def buildNumberParam = buildNumber != null && buildNumber != "" ? buildNumber : env.BUILD_NUMBER 
-    def buildUrlParam = buildUrl != null && buildUrl != "" ? buildUrl : env.BUILD_URL 
+    def buildNumberParam = buildNumber != null && buildNumber != "" ? buildNumber : env.BUILD_NUMBER
+    def buildUrlParam = buildUrl != null && buildUrl != "" ? buildUrl : env.BUILD_URL
     def subject = "${buildStatusParam}: Job '${jobNameParam} [${buildNumberParam}]'"
     def summary = "${subject} (${buildUrlParam})"
     if(msgText != null && msgText != ""){
@@ -307,7 +307,7 @@ def sendNotification(buildStatus, msgText="",enabledNotifications = [] notificat
     }else if(buildStatusParam.toLowerCase().equals("unstable")){
         colorCode = "#FFFF00"
         colorName = "yellow"
-    }else if(buildStatusParam.toLowerCase().equals("failed")){
+    }else if(buildStatusParam.toLowerCase().equals("failure")){
         colorCode = "#FF0000"
         colorName = "red"
     }

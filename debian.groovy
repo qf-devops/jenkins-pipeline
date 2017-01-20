@@ -90,23 +90,23 @@ def buildSourceGbp(dir, image="debian:sid", snapshot=false) {
     sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -xc '
             apt-get update && apt-get install -y build-essential git-buildpackage &&
             cd ${dir} &&
-            [[ "${snapshot}" == "false" ]] || (
+            [[ "${snapshot}" == "false" ]] || {
                 VERSION=`dpkg-parsechangelog --count 1 | grep Version: | sed "s,Version: ,,g"` &&
                 UPSTREAM_VERSION=`echo \$VERSION | cut -d "-" -f 1` &&
                 REVISION=`echo \$VERSION | cut -d "-" -f 2` &&
-                TIMESTAMP=`date +%Y%m%d%H%M`
-                grep native debian/source/format || (
+                TIMESTAMP=`date +%Y%m%d%H%M` &&
+                grep native debian/source/format || {
                     UPSTREAM_BRANCH=`gbp config DEFAULT.upstream-branch|cut -d = -f 2` &&
                     UPSTREAM_REV=`git rev-parse --short \$UPSTREAM_BRANCH` &&
-                    NEW_VERSION=\$UPSTREAM_VERSION~\$TIMESTAMP.\$UPSTREAM_REV-\$REVISION &&
-                    NEW_UPSTREAM_VERSION="\$UPSTREAM_VERSION~\$TIMESTAMP.\$UPSTREAM_REV"
+                    NEW_VERSION=\$UPSTREAM_VERSION+\$TIMESTAMP.\$UPSTREAM_REV-\$REVISION &&
+                    NEW_UPSTREAM_VERSION="\$UPSTREAM_VERSION+\$TIMESTAMP.\$UPSTREAM_REV" &&
                     echo "Generating new upstream version \$NEW_UPSTREAM_VERSION" &&
                     git tag \$NEW_UPSTREAM_VERSION \$UPSTREAM_BRANCH &&
                     git merge -X theirs \$NEW_UPSTREAM_VERSION
-                ) &&
-                grep quilt debian/source/format || (
-                    NEW_VERSION=\$VERSION~\$TIMESTAMP.`git rev-parse --short HEAD`
-                ) &&
+                } &&
+                grep quilt debian/source/format || {
+                    NEW_VERSION=\$VERSION+\$TIMESTAMP.`git rev-parse --short HEAD`
+                } &&
                 gbp dch --auto --multimaint-merge --ignore-branch --new-version=\$NEW_VERSION --distribution `lsb_release -c -s` --force-distribution &&
                 git config --global user.name "Jenkins" &&
                 git config --global user.email "jenkins@`hostname`" &&
