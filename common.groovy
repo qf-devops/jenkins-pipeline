@@ -288,7 +288,7 @@ def jenkinsHasPlugin(pluginName){
  * @param mailFrom mail FROM param, if empty "jenkins" will be used, it's mandatory for sending email notifications
  * @param mailTo mail TO param, it's mandatory for sending email notifications
  */
-def sendNotification(buildStatus, msgText="",enabledNotifications = [] notificatedTypes=["successful","unstable","failure"], jobName=null, buildNumber=null, buildUrl=null, mailFrom="jenkins", mailTo=null){
+def sendNotification(buildStatus, msgText="", enabledNotifications = [], notificatedTypes=["successful","unstable","failure"], jobName=null, buildNumber=null, buildUrl=null, mailFrom="jenkins", mailTo=null){
     // Default values
     def colorName = 'blue'
     def colorCode = '#0000FF'
