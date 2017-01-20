@@ -91,21 +91,26 @@ def buildSourceGbp(dir, image="debian:sid", snapshot=false) {
             apt-get update && apt-get install -y build-essential git-buildpackage &&
             cd ${dir} &&
             [[ "${snapshot}" == "false" ]] || (
-                VERSION=`dpkg-parsechangelog --count 1 | awk "/^Version/ {print \\\$2}"` &&
+                VERSION=`dpkg-parsechangelog --count 1 | grep Version: | sed "s,Version: ,,g"` &&
                 UPSTREAM_VERSION=`echo \$VERSION | cut -d "-" -f 1` &&
                 REVISION=`echo \$VERSION | cut -d "-" -f 2` &&
+                TIMESTAMP=`date +%Y%m%d%H%M`
                 grep native debian/source/format || (
                     UPSTREAM_BRANCH=`gbp config DEFAULT.upstream-branch|cut -d = -f 2` &&
                     UPSTREAM_REV=`git rev-parse --short \$UPSTREAM_BRANCH` &&
-                    NEW_VERSION=\$UPSTREAM_VERSION+\$UPSTREAM_REV-\$REVISION &&
-                    echo "Generating new upstream version \$UPSTREAM_VERSION-\$UPSTREAM_REV" &&
-                    git tag \$UPSTREAM_VERSION+\$UPSTREAM_REV \$UPSTREAM_BRANCH &&
-                    git merge -X theirs \$UPSTREAM_VERSION+\$UPSTREAM_REV
+                    NEW_VERSION=\$UPSTREAM_VERSION~\$TIMESTAMP.\$UPSTREAM_REV-\$REVISION &&
+                    NEW_UPSTREAM_VERSION="\$UPSTREAM_VERSION~\$TIMESTAMP.\$UPSTREAM_REV"
+                    echo "Generating new upstream version \$NEW_UPSTREAM_VERSION" &&
+                    git tag \$NEW_UPSTREAM_VERSION \$UPSTREAM_BRANCH &&
+                    git merge -X theirs \$NEW_UPSTREAM_VERSION
                 ) &&
                 grep quilt debian/source/format || (
-                    NEW_VERSION=\$VERSION+`git rev-parse --short HEAD`
+                    NEW_VERSION=\$VERSION~\$TIMESTAMP.`git rev-parse --short HEAD`
                 ) &&
-                gbp dch --auto -S --multimaint-merge --ignore-branch --new-version=\$NEW_VERSION --distribution `lsb_release -c -s` --force-distribution
+                gbp dch --auto --multimaint-merge --ignore-branch --new-version=\$NEW_VERSION --distribution `lsb_release -c -s` --force-distribution &&
+                git config --global user.name "Jenkins" &&
+                git config --global user.email "jenkins@`hostname`" &&
+                git add -u debian/changelog && git commit -m "New snapshot version \$NEW_VERSION"
             ) &&
             gbp buildpackage -nc --git-force-create --git-notify=false --git-ignore-branch --git-ignore-new --git-verbose --git-export-dir=../build-area -S -uc -us'""")
 }
