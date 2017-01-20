@@ -216,10 +216,16 @@ def agentSh(cmd) {
  * @param url   url of remote host
  */
 def ensureKnownHosts(url) {
-    // test for git@github.com:organization/repository like URLs
-    p = ~/.+@(.+\..+)\:{1}.*/
-    result = p.matcher(url)
-    host = ""
+    def hostArray = getKnownHost(url)
+    sh "test -f ~/.ssh/known_hosts && grep ${hostArray[0]} ~/.ssh/known_hosts || ssh-keyscan -p ${hostArray[1]} ${hostArray[0]} >> ~/.ssh/known_hosts"
+}
+
+@NonCPS
+def getKnownHost(url){
+     // test for git@github.com:organization/repository like URLs
+    def p = ~/.+@(.+\..+)\:{1}.*/
+    def result = p.matcher(url)
+    def host = ""
     if (result.matches()) {
         host = result.group(1)
         port = 22
@@ -228,7 +234,7 @@ def ensureKnownHosts(url) {
         host = parsed.host
         port = parsed.port && parsed.port > 0 ? parsed.port: 22
     }
-    sh "test -f ~/.ssh/known_hosts && grep ${host} ~/.ssh/known_hosts || ssh-keyscan -p ${port} ${host} >> ~/.ssh/known_hosts"
+    return [host,port]
 }
 
 /**
