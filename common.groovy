@@ -238,31 +238,54 @@ def getKnownHost(url){
 }
 
 /**
- * Mirror git repository
+ * Mirror git repository, merge target changes (downstream) on top of source
+ * (upstream) and push target or both if pushSource is true
+ *
+ * @param sourceUrl      Source git repository
+ * @param targetUrl      Target git repository
+ * @param credentialsId  Credentials id to use for accessing source/target
+ *                       repositories
+ * @param branches       List or comma-separated string of branches to sync
+ * @param followTags     Mirror tags
+ * @param pushSource     Push back into source branch, resulting in 2-way sync
+ * @param pushSourceTags Push target tags into source or skip pushing tags
+ * @param gitEmail       Email for creation of merge commits
+ * @param gitName        Name for creation of merge commits
  */
-def mirrorGit(sourceUrl, targetUrl, credentialsId, branches, followTags = false, gitEmail = 'jenkins@localhost', gitUsername = 'Jenkins') {
+def mirrorGit(sourceUrl, targetUrl, credentialsId, branches, followTags = false, pushSource = false, pushSourceTags = false, gitEmail = 'jenkins@localhost', gitName = 'Jenkins') {
     if (branches instanceof String) {
         branches = branches.tokenize(',')
     }
 
     prepareSshAgentKey(credentialsId)
     ensureKnownHosts(targetUrl)
+    sh "git config user.email '${gitEmail}'"
+    sh "git config user.name '${gitName}'"
 
     sh "git remote | grep target || git remote add target ${TARGET_URL}"
     agentSh "git remote update --prune"
+
     for (i=0; i < branches.size; i++) {
         branch = branches[i]
         sh "git branch | grep ${branch} || git checkout -b ${branch} origin/${branch}"
         sh "git branch | grep ${branch} && git checkout ${branch} && git reset --hard origin/${branch}"
 
-        sh "git config user.email '${gitEmail}'"
-        sh "git config user.name '${gitUsername}'"
         sh "git ls-tree target/${branch} && git merge --no-edit --ff target/${branch} || echo 'Target repository is empty, skipping merge'"
         followTagsArg = followTags ? "--follow-tags" : ""
         agentSh "git push ${followTagsArg} target HEAD:${branch}"
+
+        if (pushSource == true) {
+            followTagsArg = followTags && pushSourceTags ? "--follow-tags" : ""
+            agentSh "git push ${followTagsArg} origin HEAD:${branch}"
+        }
     }
+
     if (followTags == true) {
         agentSh "git push target --tags"
+
+        if (pushSourceTags == true) {
+            agentSh "git push origin --tags"
+        }
     }
 }
 
