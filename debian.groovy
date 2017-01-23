@@ -28,6 +28,9 @@ def buildBinary(file, image="debian:sid", extraRepoUrl=null, extraRepoKeyUrl=nul
 
     workspace = getWorkspace()
     sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -c '
+            which eatmydata || (apt-get update && apt-get install -y eatmydata) &&
+            export LD_LIBRARY_PATH=\${LD_LIBRARY_PATH:+"\$LD_LIBRARY_PATH:"}/usr/lib/libeatmydata &&
+            export LD_PRELOAD=\${LD_PRELOAD:+"\$LD_PRELOAD "}libeatmydata.so &&
             [[ -z "${extraRepoUrl}" && "${extraRepoUrl}" != "null" ]] || echo "${extraRepoUrl}" >/etc/apt/sources.list.d/extra.list &&
             [[ -z "${extraRepoKeyUrl}" && "${extraRepoKeyUrl}" != "null" ]] || (
                 which curl || (apt-get update && apt-get install -y curl) &&
@@ -88,6 +91,9 @@ def buildSourceGbp(dir, image="debian:sid", snapshot=false) {
     def img = docker.image(image)
     workspace = getWorkspace()
     sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -xc '
+            which eatmydata || (apt-get update && apt-get install -y eatmydata) &&
+            export LD_LIBRARY_PATH=\${LD_LIBRARY_PATH:+"\$LD_LIBRARY_PATH:"}/usr/lib/libeatmydata &&
+            export LD_PRELOAD=\${LD_PRELOAD:+"\$LD_PRELOAD "}libeatmydata.so &&
             apt-get update && apt-get install -y build-essential git-buildpackage &&
             cd ${dir} &&
             [[ "${snapshot}" == "false" ]] || (
