@@ -49,7 +49,7 @@ def buildBinary(file, image="debian:sid", extraRepoUrl=null, extraRepoKeyUrl=nul
  * @param image Image name to use for build (default debian:sid)
  * @param snapshot Generate snapshot version (default false)
  */
-def buildSource(dir, image="debian:sid", snapshot=false) {
+def buildSource(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@dummy.org', gitName='Jenkins') {
     def isGit
     try {
         sh("test -d ${dir}/.git")
@@ -59,7 +59,7 @@ def buildSource(dir, image="debian:sid", snapshot=false) {
     }
 
     if (isGit == true) {
-        buildSourceGbp(dir, image, snapshot)
+        buildSourceGbp(dir, image, snapshot, gitEmail='jenkins@dummy.org', gitName='Jenkins')
     } else {
         buildSourceUscan(dir, image)
     }
