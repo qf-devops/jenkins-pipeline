@@ -87,7 +87,7 @@ def buildSourceUscan(dir, image="debian:sid") {
  * @param image Image name to use for build (default debian:sid)
  * @param snapshot Generate snapshot version (default false)
  */
-def buildSourceGbp(dir, image="debian:sid", snapshot=false) {
+def buildSourceGbp(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@dummy.org', gitName='Jenkins') {
     def img = docker.image(image)
     workspace = getWorkspace()
     sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -xc '
@@ -114,8 +114,8 @@ def buildSourceGbp(dir, image="debian:sid", snapshot=false) {
                     NEW_VERSION=\$VERSION+\$TIMESTAMP.`git rev-parse --short HEAD`
                 } &&
                 gbp dch --auto --multimaint-merge --ignore-branch --new-version=\$NEW_VERSION --distribution `lsb_release -c -s` --force-distribution &&
-                git config --global user.name "Jenkins" &&
-                git config --global user.email "jenkins@`hostname`" &&
+                git config --global user.name "${gitName}" &&
+                git config --global user.email "${gitEmail}" &&
                 git add -u debian/changelog && git commit -m "New snapshot version \$NEW_VERSION"
             ) &&
             gbp buildpackage -nc --git-force-create --git-notify=false --git-ignore-branch --git-ignore-new --git-verbose --git-export-dir=../build-area -S -uc -us'""")
