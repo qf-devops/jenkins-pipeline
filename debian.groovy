@@ -111,9 +111,9 @@ def buildSourceGbp(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@du
                     echo "Generating new upstream version \$NEW_UPSTREAM_VERSION" &&
                     git tag \$NEW_UPSTREAM_VERSION \$UPSTREAM_BRANCH &&
                     git merge -X theirs \$NEW_UPSTREAM_VERSION
-                ;else
+                else
                     NEW_VERSION=\$VERSION+\$TIMESTAMP.`git rev-parse --short HEAD`
-                ;fi &&
+                fi &&
                 gbp dch --auto --multimaint-merge --ignore-branch --new-version=\$NEW_VERSION --distribution `lsb_release -c -s` --force-distribution &&
                 git add -u debian/changelog && git commit -m "New snapshot version \$NEW_VERSION"
             ) &&
