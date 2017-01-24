@@ -102,7 +102,7 @@ def buildSourceGbp(dir, image="debian:sid", snapshot=false) {
                 REVISION=`echo \$VERSION | cut -d "-" -f 2` &&
                 TIMESTAMP=`date +%Y%m%d%H%M` &&
                 grep native debian/source/format || {
-                    UPSTREAM_BRANCH=`gbp config DEFAULT.upstream-branch|cut -d = -f 2` &&
+                    UPSTREAM_BRANCH=`(grep upstream-branch debian/gbp.conf || echo master) | cut -d = -f 2` &&
                     UPSTREAM_REV=`git rev-parse --short \$UPSTREAM_BRANCH` &&
                     NEW_VERSION=\$UPSTREAM_VERSION+\$TIMESTAMP.\$UPSTREAM_REV-\$REVISION &&
                     NEW_UPSTREAM_VERSION="\$UPSTREAM_VERSION+\$TIMESTAMP.\$UPSTREAM_REV" &&
