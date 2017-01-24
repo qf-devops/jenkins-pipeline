@@ -46,9 +46,9 @@ def snapshotRepo(server, repo, timestamp = null) {
     // XXX: timestamp parameter is obsoleted, time of snapshot creation is
     // what we should always use, not what calling pipeline provides
     def now = new Date();
-    def timestamp = now.format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'));
+    def ts = now.format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'));
 
-    def snapshot = "${repo}-${timestamp}"
+    def snapshot = "${repo}-${ts}"
     sh("curl -f -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"$snapshot\"}' ${server}/api/repos/${repo}/snapshots")
 }
 
