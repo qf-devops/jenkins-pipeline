@@ -90,7 +90,7 @@ def buildSourceUscan(dir, image="debian:sid") {
 def buildSourceGbp(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@dummy.org', gitName='Jenkins') {
     def img = docker.image(image)
     workspace = getWorkspace()
-    sh("""docker run -e DEBIAN_FRONTEND=noninteractive -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -exc '
+    sh("""docker run -e DEBIAN_FRONTEND=noninteractive -e DEBFULLNAME='${gitName}' -e DEBEMAIL='${gitEmail}' -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -exc '
             which eatmydata || (apt-get update && apt-get install -y eatmydata) &&
             export LD_LIBRARY_PATH=\${LD_LIBRARY_PATH:+"\$LD_LIBRARY_PATH:"}/usr/lib/libeatmydata &&
             export LD_PRELOAD=\${LD_PRELOAD:+"\$LD_PRELOAD "}libeatmydata.so &&
