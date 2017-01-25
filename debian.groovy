@@ -59,7 +59,7 @@ def buildSource(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@dummy
     }
 
     if (isGit == true) {
-        buildSourceGbp(dir, image, snapshot, gitEmail='jenkins@dummy.org', gitName='Jenkins')
+        buildSourceGbp(dir, image, snapshot, gitEmail, gitName)
     } else {
         buildSourceUscan(dir, image)
     }
@@ -88,16 +88,27 @@ def buildSourceUscan(dir, image="debian:sid") {
  * @param snapshot Generate snapshot version (default false)
  */
 def buildSourceGbp(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@dummy.org', gitName='Jenkins') {
+    def jenkinsUID = sh (
+        script: 'id -u',
+        returnStdout: true
+    ).trim()
+    def jenkinsGID = sh (
+        script: 'id -g',
+        returnStdout: true
+    ).trim()
+
     def img = docker.image(image)
     workspace = getWorkspace()
     sh("""docker run -e DEBIAN_FRONTEND=noninteractive -e DEBFULLNAME='${gitName}' -e DEBEMAIL='${gitEmail}' -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -exc '
             which eatmydata || (apt-get update && apt-get install -y eatmydata) &&
             export LD_LIBRARY_PATH=\${LD_LIBRARY_PATH:+"\$LD_LIBRARY_PATH:"}/usr/lib/libeatmydata &&
             export LD_PRELOAD=\${LD_PRELOAD:+"\$LD_PRELOAD "}libeatmydata.so &&
-            apt-get update && apt-get install -y build-essential git-buildpackage &&
+            apt-get update && apt-get install -y build-essential git-buildpackage sudo &&
+            groupadd -g ${jenkinsGID} jenkins &&
+            useradd -s /bin/bash --uid ${jenkinsUID} --gid ${jenkinsGID} -m jenkins &&
             cd ${dir} &&
-            git config --global user.name "${gitName}" &&
-            git config --global user.email "${gitEmail}" &&
+            sudo -H -u jenkins git config --global user.name "${gitName}" &&
+            sudo -H -u jenkins git config --global user.email "${gitEmail}" &&
             [[ "${snapshot}" == "false" ]] || (
                 VERSION=`dpkg-parsechangelog --count 1 | grep Version: | sed "s,Version: ,,g"` &&
                 UPSTREAM_VERSION=`echo \$VERSION | cut -d "-" -f 1` &&
@@ -109,13 +120,14 @@ def buildSourceGbp(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@du
                     NEW_UPSTREAM_VERSION="\$UPSTREAM_VERSION+\$TIMESTAMP.\$UPSTREAM_REV" &&
                     NEW_VERSION=\$NEW_UPSTREAM_VERSION-\$REVISION &&
                     echo "Generating new upstream version \$NEW_UPSTREAM_VERSION" &&
-                    git tag \$NEW_UPSTREAM_VERSION \$UPSTREAM_BRANCH &&
-                    git merge -X theirs \$NEW_UPSTREAM_VERSION
+                    sudo -H -u jenkins git tag \$NEW_UPSTREAM_VERSION \$UPSTREAM_BRANCH &&
+                    sudo -H -u jenkins git merge -X theirs \$NEW_UPSTREAM_VERSION
                 else
                     NEW_VERSION=\$VERSION+\$TIMESTAMP.`git rev-parse --short HEAD`
                 fi &&
-                gbp dch --auto --multimaint-merge --ignore-branch --new-version=\$NEW_VERSION --distribution `lsb_release -c -s` --force-distribution &&
-                git add -u debian/changelog && git commit -m "New snapshot version \$NEW_VERSION"
+                sudo -H -u jenkins gbp dch --auto --multimaint-merge --ignore-branch --new-version=\$NEW_VERSION --distribution `lsb_release -c -s` --force-distribution &&
+                sudo -H -u jenkins git add -u debian/changelog &&
+                sudo -H -u jenkins git commit -m "New snapshot version \$NEW_VERSION"
             ) &&
             gbp buildpackage -nc --git-force-create --git-notify=false --git-ignore-branch --git-ignore-new --git-verbose --git-export-dir=../build-area -S -uc -us'""")
 }
