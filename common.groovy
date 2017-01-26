@@ -299,19 +299,38 @@ def jenkinsHasPlugin(pluginName){
     return Jenkins.instance.pluginManager.plugins.collect{p -> p.shortName}.contains(pluginName)
 }
 
+@NonCPS
+def _needNotification(notificatedTypes, buildStatus, jobName) {
+    if(notificatedTypes.contains("onchange")){
+        if(jobName){
+            def lastBuild = Jenkins.instance.getItem(jobName).lastBuild
+            if(lastBuild){
+                return !lastBuild.result.toLowerCase().equals(buildStatus)
+            }else{
+                //first build
+                return true;
+            }
+        }
+    }else if(notificatedTypes.contains(buildStatus)){
+        return true;
+    }
+    return false;
+}
+
 /**
  * Send notification to all enabled notifications services
  * @param buildStatus message type (success, warning, error), null means SUCCESSFUL
  * @param msgText message text
  * @param enabledNotifications list of enabled notification types, types: slack, hipchat, email, default empty
- * @param notificatedTypes types of notifications will be sent, default all - ["successful","unstable","failed"]
+ * @param notificatedTypes types of notifications will be sent, default onchange - notificate if current build result not equal last result; 
+ *                         otherwise use - ["successful","unstable","failed"]
  * @param jobName optional job name param, if empty env.JOB_NAME will be used
  * @param buildNumber build number param, if empty env.JOB_NAME will be used
  * @param buildUrl build url param, if empty env.JOB_NAME will be used
  * @param mailFrom mail FROM param, if empty "jenkins" will be used, it's mandatory for sending email notifications
  * @param mailTo mail TO param, it's mandatory for sending email notifications
  */
-def sendNotification(buildStatus, msgText="", enabledNotifications = [], notificatedTypes=["successful","unstable","failure"], jobName=null, buildNumber=null, buildUrl=null, mailFrom="jenkins", mailTo=null){
+def sendNotification(buildStatus, msgText="", enabledNotifications = [], notificatedTypes=["onchange"], jobName=null, buildNumber=null, buildUrl=null, mailFrom="jenkins", mailTo=null){
     // Default values
     def colorName = 'blue'
     def colorCode = '#0000FF'
@@ -321,6 +340,7 @@ def sendNotification(buildStatus, msgText="", enabledNotifications = [], notific
     def buildUrlParam = buildUrl != null && buildUrl != "" ? buildUrl : env.BUILD_URL
     def subject = "${buildStatusParam}: Job '${jobNameParam} [${buildNumberParam}]'"
     def summary = "${subject} (${buildUrlParam})"
+
     if(msgText != null && msgText != ""){
         summary+="\n${msgText}"
     }
@@ -334,7 +354,7 @@ def sendNotification(buildStatus, msgText="", enabledNotifications = [], notific
         colorCode = "#FF0000"
         colorName = "red"
     }
-    if(notificatedTypes.contains(buildStatusParam.toLowerCase())){
+    if(_needNotification(notificatedTypes, buildStatusParam.toLowerCase(), jobNameParam)){
         if(enabledNotifications.contains("slack") && jenkinsHasPlugin("slack")){
             try{
                 slackSend color: colorCode, message: summary
