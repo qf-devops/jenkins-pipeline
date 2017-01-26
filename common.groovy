@@ -301,20 +301,25 @@ def jenkinsHasPlugin(pluginName){
 
 @NonCPS
 def _needNotification(notificatedTypes, buildStatus, jobName) {
-    if(notificatedTypes.contains("onchange")){
+    if(notificatedTypes && notificatedTypes.contains("onchange")){
         if(jobName){
-            def lastBuild = Jenkins.instance.getItem(jobName).lastBuild
-            if(lastBuild){
-                return !lastBuild.result.toLowerCase().equals(buildStatus)
-            }else{
-                //first build
-                return true;
+            def job = Jenkins.instance.getItem(jobName)
+            def numbuilds = job.builds.size()
+            if (numbuilds > 0){
+                //actual build is first for some reasons, so last finished build is second
+                def lastBuild = job.builds[1]
+                if(lastBuild){
+                    if(lastBuild.result.toString().toLowerCase().equals(buildStatus)){
+                        println("Build status didn't changed since last build, not sending notifications")
+                        return false;
+                    }
+                }
             }
         }
-    }else if(notificatedTypes.contains(buildStatus)){
-        return true;
+    }else if(!notificatedTypes.contains(buildStatus)){
+        return false;
     }
-    return false;
+    return true;
 }
 
 /**
@@ -323,7 +328,7 @@ def _needNotification(notificatedTypes, buildStatus, jobName) {
  * @param msgText message text
  * @param enabledNotifications list of enabled notification types, types: slack, hipchat, email, default empty
  * @param notificatedTypes types of notifications will be sent, default onchange - notificate if current build result not equal last result; 
- *                         otherwise use - ["successful","unstable","failed"]
+ *                         otherwise use - ["success","unstable","failed"]
  * @param jobName optional job name param, if empty env.JOB_NAME will be used
  * @param buildNumber build number param, if empty env.JOB_NAME will be used
  * @param buildUrl build url param, if empty env.JOB_NAME will be used
@@ -334,7 +339,7 @@ def sendNotification(buildStatus, msgText="", enabledNotifications = [], notific
     // Default values
     def colorName = 'blue'
     def colorCode = '#0000FF'
-    def buildStatusParam = buildStatus != null && buildStatus != "" ? buildStatus : "SUCCESSFUL"
+    def buildStatusParam = buildStatus != null && buildStatus != "" ? buildStatus : "SUCCESS"
     def jobNameParam = jobName != null && jobName != "" ? jobName : env.JOB_NAME
     def buildNumberParam = buildNumber != null && buildNumber != "" ? buildNumber : env.BUILD_NUMBER
     def buildUrlParam = buildUrl != null && buildUrl != "" ? buildUrl : env.BUILD_URL
@@ -344,7 +349,7 @@ def sendNotification(buildStatus, msgText="", enabledNotifications = [], notific
     if(msgText != null && msgText != ""){
         summary+="\n${msgText}"
     }
-    if(buildStatusParam.toLowerCase().equals("successful")){
+    if(buildStatusParam.toLowerCase().equals("success")){
         colorCode = "#00FF00"
         colorName = "green"
     }else if(buildStatusParam.toLowerCase().equals("unstable")){
