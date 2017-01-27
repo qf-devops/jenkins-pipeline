@@ -327,7 +327,7 @@ def _needNotification(notificatedTypes, buildStatus, jobName) {
  * @param buildStatus message type (success, warning, error), null means SUCCESSFUL
  * @param msgText message text
  * @param enabledNotifications list of enabled notification types, types: slack, hipchat, email, default empty
- * @param notificatedTypes types of notifications will be sent, default onchange - notificate if current build result not equal last result; 
+ * @param notificatedTypes types of notifications will be sent, default onchange - notificate if current build result not equal last result;
  *                         otherwise use - ["success","unstable","failed"]
  * @param jobName optional job name param, if empty env.JOB_NAME will be used
  * @param buildNumber build number param, if empty env.JOB_NAME will be used
@@ -385,6 +385,71 @@ def sendNotification(buildStatus, msgText="", enabledNotifications = [], notific
             }
         }
     }
+}
+
+/**
+ * Execute git clone and checkout stage from gerrit review
+ *
+ * @param config LinkedHashMap
+ *        config includes next parameters:
+ *          - credentialsId, id of user which should make checkout
+ *          - withMerge, prevent detached mode in repo
+ *          - withWipeOut, wipe repository and force clone
+ *
+ * Usage example:
+ * //anonymous gerrit checkout
+ * def gitFunc = new com.mirantis.mcp.Git()
+ * gitFunc.gerritPatchsetCheckout([
+ *   withMerge : true
+ * ])
+ *
+ * def gitFunc = new com.mirantis.mcp.Git()
+ * gitFunc.gerritPatchsetCheckout([
+ *   credentialsId : 'mcp-ci-gerrit',
+ *   withMerge : true
+ * ])
+ */
+def gerritPatchsetCheckout(LinkedHashMap config) {
+    def merge = config.get('withMerge', false)
+    def wipe = config.get('withWipeOut', false)
+    def credentials = config.get('credentialsId','')
+
+    // default parameters
+    def scmExtensions = [
+        [$class: 'CleanCheckout'],
+        [$class: 'BuildChooserSetting', buildChooser: [$class: 'GerritTriggerBuildChooser']]
+    ]
+    def scmUserRemoteConfigs = [
+        name: 'gerrit',
+        refspec: "${GERRIT_REFSPEC}"
+    ]
+
+    if (credentials == '') {
+        // then try to checkout in anonymous mode
+        scmUserRemoteConfigs.put('url',"https://${GERRIT_HOST}/${GERRIT_PROJECT}")
+    } else {
+        // else use ssh checkout
+        scmUserRemoteConfigs.put('url',"ssh://${GERRIT_NAME}@${GERRIT_HOST}:${GERRIT_PORT}/${GERRIT_PROJECT}.git")
+        scmUserRemoteConfigs.put('credentialsId',credentials)
+    }
+
+    // if we need to "merge" code from patchset to GERRIT_BRANCH branch
+    if (merge) {
+        scmExtensions.add([$class: 'LocalBranch', localBranch: "${GERRIT_BRANCH}"])
+    }
+    // we need wipe workspace before checkout
+    if (wipe) {
+        scmExtensions.add([$class: 'WipeWorkspace'])
+    }
+
+    checkout(
+        scm: [
+            $class: 'GitSCM',
+            branches: [[name: "${GERRIT_BRANCH}"]],
+            extensions: scmExtensions,
+            userRemoteConfigs: [scmUserRemoteConfigs]
+        ]
+    )
 }
 
 return this;
