@@ -64,7 +64,7 @@ def diffPublish(server, source, target, components=null, opts='--timeout 600') {
     sh("aptly-publisher --dry --url ${server} promote --source ${source} --target ${target} --diff ${opts}")
 }
 
-def promotePublish(server, source, target, recreate=false, components=null, packages=null, opts='-d --timeout 600') {
+def promotePublish(server, source, target, recreate=false, components=null, packages=null, diff=false, opts='-d --timeout 600') {
     if (components) {
         def componentsStr = components.join(' ')
         opts = "${opts} --components ${componentsStr}"
@@ -75,6 +75,9 @@ def promotePublish(server, source, target, recreate=false, components=null, pack
     }
     if (recreate == true) {
         opts = "${opts} --recreate"
+    }
+    if (diff == true) {
+        opts = "--dry --diff"
     }
     sh("aptly-publisher --url ${server} promote --source ${source} --target ${target} ${opts}")
 }
