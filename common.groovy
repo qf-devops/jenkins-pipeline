@@ -452,4 +452,13 @@ def gerritPatchsetCheckout(LinkedHashMap config) {
     )
 }
 
+/**
+ * Enable old builds cleanup for current pipeline job
+ * @param maxBuilds maximum existing builds allowed (optional, default 50)
+ *
+*/
+def enableBuildsCleanup(maxBuilds=50){
+    properties([[$class: 'BuildDiscarderProperty', strategy: [$class: 'LogRotator', artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: String.format('%s',maxBuilds)]]])
+}
+
 return this;
