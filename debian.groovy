@@ -49,7 +49,7 @@ def buildBinary(file, image="debian:sid", extraRepoUrl=null, extraRepoKeyUrl=nul
  * @param image Image name to use for build (default debian:sid)
  * @param snapshot Generate snapshot version (default false)
  */
-def buildSource(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@dummy.org', gitName='Jenkins') {
+def buildSource(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@dummy.org', gitName='Jenkins', revisionPostfix="") {
     def isGit
     try {
         sh("test -d ${dir}/.git")
@@ -59,7 +59,7 @@ def buildSource(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@dummy
     }
 
     if (isGit == true) {
-        buildSourceGbp(dir, image, snapshot, gitEmail, gitName)
+        buildSourceGbp(dir, image, snapshot, gitEmail, gitName, revisionPostfix)
     } else {
         buildSourceUscan(dir, image)
     }
@@ -87,7 +87,7 @@ def buildSourceUscan(dir, image="debian:sid") {
  * @param image Image name to use for build (default debian:sid)
  * @param snapshot Generate snapshot version (default false)
  */
-def buildSourceGbp(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@dummy.org', gitName='Jenkins') {
+def buildSourceGbp(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@dummy.org', gitName='Jenkins', revisionPostfix="") {
     def jenkinsUID = sh (
         script: 'id -u',
         returnStdout: true
@@ -118,12 +118,12 @@ def buildSourceGbp(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@du
                     UPSTREAM_BRANCH=`(grep upstream-branch debian/gbp.conf || echo master) | cut -d = -f 2 | tr -d " "` &&
                     UPSTREAM_REV=`git rev-parse --short origin/\$UPSTREAM_BRANCH` &&
                     NEW_UPSTREAM_VERSION="\$UPSTREAM_VERSION+\$TIMESTAMP.\$UPSTREAM_REV" &&
-                    NEW_VERSION=\$NEW_UPSTREAM_VERSION-\$REVISION &&
+                    NEW_VERSION=\$NEW_UPSTREAM_VERSION-\$REVISION$revisionPostfix &&
                     echo "Generating new upstream version \$NEW_UPSTREAM_VERSION" &&
                     sudo -H -u jenkins git tag \$NEW_UPSTREAM_VERSION origin/\$UPSTREAM_BRANCH &&
                     sudo -H -u jenkins git merge -X theirs \$NEW_UPSTREAM_VERSION
                 else
-                    NEW_VERSION=\$VERSION+\$TIMESTAMP.`git rev-parse --short HEAD`
+                    NEW_VERSION=\$VERSION+\$TIMESTAMP.`git rev-parse --short HEAD`$revisionPostfix
                 fi &&
                 sudo -H -u jenkins gbp dch --auto --multimaint-merge --ignore-branch --new-version=\$NEW_VERSION --distribution `lsb_release -c -s` --force-distribution &&
                 sudo -H -u jenkins git add -u debian/changelog &&
