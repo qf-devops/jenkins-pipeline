@@ -97,6 +97,10 @@ def buildSourceGbp(dir, image="debian:sid", snapshot=false, gitEmail='jenkins@du
         returnStdout: true
     ).trim()
 
+    if (! revisionPostfix) {
+        revisionPostfix = ""
+    }
+
     def img = docker.image(image)
     workspace = getWorkspace()
     sh("""docker run -e DEBIAN_FRONTEND=noninteractive -e DEBFULLNAME='${gitName}' -e DEBEMAIL='${gitEmail}' -v ${workspace}:${workspace} -w ${workspace} --rm=true --privileged ${image} /bin/bash -exc '
